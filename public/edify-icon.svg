@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#grad)"/>
+  <!-- Open book -->
+  <path d="M 36 42 Q 64 32 92 42 L 92 92 Q 64 82 36 92 Z" fill="none" stroke="white" stroke-width="3.5" stroke-linejoin="round"/>
+  <line x1="64" y1="37" x2="64" y2="87" stroke="white" stroke-width="3.5"/>
+  <!-- Upward learning arrow -->
+  <path d="M 64 24 L 58 32 M 64 24 L 70 32 M 64 24 L 64 38" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Page lines -->
+  <line x1="44" y1="56" x2="56" y2="52" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="44" y1="66" x2="56" y2="62" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="44" y1="76" x2="56" y2="72" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="72" y1="52" x2="84" y2="56" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="72" y1="62" x2="84" y2="66" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <line x1="72" y1="72" x2="84" y2="76" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+</svg>

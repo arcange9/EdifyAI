@@ -1,0 +1,61 @@
+{
+  "name": "edifyai",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Edify AI — Turn Knowledge Into Understanding. AI-powered study workspace for Windows.",
+  "author": "Edify AI contributors",
+  "license": "MIT",
+  "main": "electron/main.mjs",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "app": "npm run build && electron .",
+    "app:nobuild": "electron .",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src electron --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "dompurify": "^3.4.12",
+    "katex": "^0.18.1",
+    "lucide-react": "^1.25.0",
+    "mammoth": "^1.12.0",
+    "marked": "^18.0.6",
+    "openai": "^4.85.4",
+    "pdfjs-dist": "^6.1.200",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.18.1",
+    "uuid": "^14.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/dompurify": "^3.2.0",
+    "@types/katex": "^0.16.8",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/uuid": "^11.0.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "electron": "^43.1.1",
+    "electron-builder": "^26.15.3",
+    "eslint": "^9.22.0",
+    "jsdom": "^29.1.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4",
+    "vitest": "^4.1.10"
+  }
+}

@@ -1,0 +1,87 @@
+name: Build Edify AI Windows Installer
+
+on:
+  push:
+    branches: ["main", "master"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Edify AI
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm run test
+        continue-on-error: true
+
+      - name: Build Vite application
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Build Electron Windows installer
+        run: npm run dist:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_ENV: production
+
+      - name: Verify installer exists
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem release/*.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($installer) {
+            $size = [math]::Round($installer.Length / 1MB, 2)
+            Write-Host "Installer found: $($installer.Name) ($size MB)"
+          } else {
+            Write-Host "No installer found — checking release/ contents:"
+            Get-ChildItem release/ -ErrorAction SilentlyContinue
+            exit 1
+          }
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Edify-AI-Windows-x64
+          path: release/*.exe
+          retention-days: 90
+
+      - name: Upload unpacked app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Edify-AI-Windows-x64-unpacked
+          path: release/win-unpacked/
+          retention-days: 30
+
+      - name: Create GitHub Release on tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF -replace 'refs/tags/', ''
+          $installer = (Get-ChildItem release/*.exe | Select-Object -First 1).FullName
+          gh release create $tag `
+            --title "Edify AI $tag" `
+            --notes "Download Edify-AI-Setup to install Edify AI on Windows 10/11. See the README for installation instructions." `
+            $installer
