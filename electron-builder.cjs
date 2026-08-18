@@ -8,7 +8,6 @@ module.exports = {
   extraMetadata: { main: "electron/main.mjs" },
   directories: {
     output: "release",
-    buildResources: "build-resources",
   },
   win: {
     target: [
@@ -20,8 +19,9 @@ module.exports = {
     oneClick: false,
     perMachine: false,
     allowToChangeInstallationDirectory: true,
-    installerIcon: "build-resources/icon.ico",
-    uninstallerIcon: "build-resources/icon.ico",
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true,
+    shortcutName: "Edify AI",
   },
   portable: {
     artifactName: "Edify-AI-Portable-${arch}.${ext}",

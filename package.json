@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Edify AI — Turn Knowledge Into Understanding. AI-powered study workspace for Windows.",
+  "description": "Edify AI \u2014 Turn Knowledge Into Understanding. AI-powered study workspace for Windows.",
   "author": "Edify AI contributors",
   "license": "MIT",
   "main": "electron/main.mjs",
@@ -24,7 +24,6 @@
     "lint": "eslint src electron --ext .ts,.tsx"
   },
   "dependencies": {
-    "better-sqlite3": "^11.8.1",
     "dompurify": "^3.4.12",
     "katex": "^0.18.1",
     "lucide-react": "^1.25.0",
@@ -42,7 +41,6 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/dompurify": "^3.2.0",
     "@types/katex": "^0.16.8",
     "@types/react": "^19.1.8",

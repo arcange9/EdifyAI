@@ -5,7 +5,7 @@
  *
  * The app serves the built Vite SPA locally and provides IPC handlers for:
  *   - Secure credential storage (safeStorage / keytar-equivalent)
- *   - SQLite database access (better-sqlite3, main process only)
+ *  
  *   - File system operations (open/save dialogs, file reading)
  *   - YouTube transcript extraction (via local server endpoint)
  */
