@@ -102,7 +102,28 @@ export default function Settings() {
             <button className="btn btn-outline" onClick={() => window.open("https://github.com/arcange9/EdifyAI#readme", "_blank")}>Documentation</button>
             <button className="btn btn-outline" onClick={() => window.open("https://github.com/arcange9/EdifyAI/issues", "_blank")}>Feedback</button>
           </div>
-          <p style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 24 }}>
+          <div style={{ marginTop: 24, padding: 16, borderRadius: 10, background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>Study Books</h3>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>Free textbooks by the same author — download as DOCX:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/python-mastery-notes/raw/main/docx/Python_Mastery_Notes_Complete_Book.docx", "_blank")}>
+                Python Mastery Notes — Complete Book
+              </button>
+              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ai-engineering-mastery/raw/main/docx/AI_Engineering_Mastery_Complete_Book.docx", "_blank")}>
+                AI Engineering Mastery — Complete Book
+              </button>
+              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/python-mastery-notes", "_blank")}>
+                Python Notes (individual chapters)
+              </button>
+              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ai-engineering-mastery", "_blank")}>
+                AI Engineering (individual chapters)
+              </button>
+            </div>
+          </div>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 24, textAlign: "center" }}>
+            Designed by Mukamyi Izere Arcange
+          </p>
+          <p style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 8, textAlign: "center" }}>
             Edify AI is an independent project and is not affiliated with NitroAI.
           </p>
         </div>
