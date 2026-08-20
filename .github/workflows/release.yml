@@ -1,0 +1,132 @@
+name: Release Edify AI
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number (e.g. 1.2.0) — will create tag v1.2.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, Package & Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Run tests
+        run: npm run test
+        continue-on-error: true
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Build Windows installer with auto-update metadata
+        run: npm run dist:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_ENV: production
+
+      - name: Verify build artifacts
+        shell: pwsh
+        run: |
+          Write-Host "=== Build artifacts ==="
+          Get-ChildItem release/ -Recurse | Format-Table Name, Length, LastWriteTime
+
+          $installer = Get-ChildItem release/*.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $installer) { throw "No .exe installer found" }
+
+          $yml = Get-ChildItem release/latest.yml -ErrorAction SilentlyContinue
+          if (-not $yml) { Write-Host "WARNING: latest.yml not found — auto-update won't work" }
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: edify-ai-release
+          path: |
+            release/*.exe
+            release/latest.yml
+          retention-days: 90
+
+      - name: Create or update GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          # Determine tag
+          if ($env:INPUT_VERSION -and $env:INPUT_VERSION -ne '') {
+            $tag = "v$env:INPUT_VERSION"
+          } else {
+            $tag = $env:GITHUB_REF -replace 'refs/tags/', ''
+          }
+
+          $version = $tag -replace '^v', ''
+          Write-Host "Releasing Edify AI $version (tag: $tag)"
+
+          $installer = (Get-ChildItem release/*.exe | Select-Object -First 1).FullName
+          $latestYml = (Get-ChildItem release/latest.yml -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+
+          # Check if release already exists
+          $existing = gh release view $tag --json tagName 2>$null
+          if ($existing) {
+            Write-Host "Release $tag already exists — uploading assets"
+            $files = @($installer)
+            if ($latestYml) { $files += $latestYml }
+            gh release upload $tag @files --clobber
+          } else {
+            # Create new release
+            $notes = @"
+          ## Edify AI $version
+
+          Download and run Edify-AI-Setup to install on Windows 10/11.
+
+          *Existing users will get an in-app update notification automatically.*
+
+          ### What's New
+          See the commit history for changes in this release.
+
+          ### Installation
+          1. Download Edify-AI-Setup-x64.exe
+          2. Run the installer and follow the wizard
+          3. Launch Edify AI from Start Menu or Desktop
+
+          ### Auto-Update
+          This release includes latest.yml for automatic in-app updates.
+          "@
+
+            $files = @($installer)
+            if ($latestYml) { $files += $latestYml }
+            gh release create $tag --title "Edify AI $version" --notes $notes @files
+          }
+
+          Write-Host "Release $tag created successfully"
+
+      - name: Output download URL
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF -replace 'refs/tags/', ''
+          if (-not $tag) { $tag = "v$env:INPUT_VERSION" }
+          Write-Host "::notice::Download URL: https://github.com/arcange9/EdifyAI/releases/tag/$tag"

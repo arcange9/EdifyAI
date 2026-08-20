@@ -1,17 +1,26 @@
-name: Build Edify AI Windows Installer
+name: Build & Release Edify AI
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: ["main"]
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "Mark as pre-release"
+        type: boolean
+        default: false
+      tag:
+        description: "Version tag (e.g. v1.2.0) — leave empty to skip release"
+        type: string
+        default: ""
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build Edify AI
+  build-and-release:
+    name: Build Edify AI for Windows
     runs-on: windows-latest
 
     steps:
@@ -27,12 +36,12 @@ jobs:
       - name: Install dependencies
         run: npm ci || npm install
 
-      - name: Typecheck
-        run: npm run typecheck
-        continue-on-error: true
-
       - name: Run tests
         run: npm run test
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npm run typecheck
         continue-on-error: true
 
       - name: Build Vite application
@@ -59,29 +68,75 @@ jobs:
             exit 1
           }
 
+      - name: Verify latest.yml for auto-update
+        shell: pwsh
+        run: |
+          $yml = Get-ChildItem release/latest.yml -ErrorAction SilentlyContinue
+          if ($yml) {
+            Write-Host "latest.yml found — auto-update metadata is ready"
+            Get-Content $yml.FullName
+          } else {
+            Write-Host "WARNING: latest.yml not found — auto-update may not work"
+          }
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Edify-AI-Windows-x64
-          path: release/*.exe
+          name: Edify-AI-Windows-x64-Setup
+          path: |
+            release/*.exe
+            release/latest.yml
           retention-days: 90
 
-      - name: Upload unpacked app artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Edify-AI-Windows-x64-unpacked
-          path: release/win-unpacked/
-          retention-days: 30
-
-      - name: Create GitHub Release on tag
-        if: startsWith(github.ref, 'refs/tags/v')
+      # ── Create GitHub Release (on tag push or manual dispatch with tag) ──
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+          IS_PRERELEASE: ${{ inputs.prerelease }}
         run: |
-          $tag = $env:GITHUB_REF -replace 'refs/tags/', ''
+          # Determine the tag
+          if ($env:INPUT_TAG -and $env:INPUT_TAG -ne '') {
+            $tag = $env:INPUT_TAG
+          } else {
+            $tag = $env:GITHUB_REF -replace 'refs/tags/', ''
+          }
+
+          Write-Host "Creating release for tag: $tag"
+
           $installer = (Get-ChildItem release/*.exe | Select-Object -First 1).FullName
-          gh release create $tag `
-            --title "Edify AI $tag" `
-            --notes "Download Edify-AI-Setup to install Edify AI on Windows 10/11. See the README for installation instructions." `
-            $installer
+          $latestYml = (Get-ChildItem release/latest.yml -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+
+          # Read version from package.json
+          $pkg = Get-Content package.json | ConvertFrom-Json
+          $version = $pkg.version
+
+          # Build release notes
+          $notes = @"
+          ## Edify AI $version
+
+          Download and run Edify-AI-Setup to install Edify AI on Windows 10/11.
+
+          *If you already have Edify AI installed, the app will prompt you to update automatically.*
+
+          ### Installation
+          1. Download Edify-AI-Setup-x64.exe below
+          2. Run the installer
+          3. Follow the setup wizard
+          4. Launch Edify AI from your Start Menu or Desktop
+
+          ### Auto-Update
+          This release includes latest.yml for in-app auto-updates. Existing users will be notified automatically.
+          "@
+
+          $prereleaseFlag = ""
+          if ($env:IS_PRERELEASE -eq "true") {
+            $prereleaseFlag = "--prerelease"
+          }
+
+          $files = @($installer)
+          if ($latestYml) { $files += $latestYml }
+
+          gh release create $tag --title "Edify AI $version" --notes $notes $prereleaseFlag @files

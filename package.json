@@ -1,7 +1,7 @@
 {
   "name": "edifyai",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Edify AI \u2014 Turn Knowledge Into Understanding. AI-powered study workspace for Windows.",
   "author": "Edify AI contributors",
@@ -21,7 +21,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src electron --ext .ts,.tsx"
+    "lint": "eslint src electron --ext .ts,.tsx",
+    "release": "npm run dist:win -- --publish always",
+    "release:draft": "npm run dist:win -- --publish never",
+    "prerelease": "npm run build"
   },
   "dependencies": {
     "dompurify": "^3.4.12",
@@ -34,7 +37,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.18.1",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.1",
+    "electron-updater": "^6.3.9"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

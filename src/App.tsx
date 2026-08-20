@@ -9,6 +9,7 @@ import ChatView from "./pages/ChatView";
 import Library from "./pages/Library";
 import AITutor from "./pages/AITutor";
 import StudyPlans from "./pages/StudyPlans";
+import { UpdateChecker } from "./components/ui/UpdateChecker";
 import { Loader2 } from "lucide-react";
 
 function AppRoutes() {
@@ -32,18 +33,21 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      <Route element={<AppShell />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/library" element={<Library />} />
-        <Route path="/tutor" element={<AITutor />} />
-        <Route path="/study-plans" element={<StudyPlans />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/project/:id" element={<ProjectView />} />
-        <Route path="/project/:id/chat" element={<ChatView />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/tutor" element={<AITutor />} />
+          <Route path="/study-plans" element={<StudyPlans />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/project/:id" element={<ProjectView />} />
+          <Route path="/project/:id/chat" element={<ChatView />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <UpdateChecker />
+    </>
   );
 }
 

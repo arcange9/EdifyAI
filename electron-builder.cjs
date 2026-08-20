@@ -2,12 +2,18 @@
 module.exports = {
   appId: "com.edifyai.desktop",
   productName: "Edify AI",
-  copyright: "Copyright © Edify AI",
-  publish: null,
+  copyright: "Copyright © Edify AI contributors",
   files: ["dist/**", "electron/**", "!**/*.map"],
   extraMetadata: { main: "electron/main.mjs" },
   directories: {
     output: "release",
+    buildResources: "build-resources",
+  },
+  // Publish to GitHub releases so electron-updater can check for updates
+  publish: {
+    provider: "github",
+    owner: "arcange9",
+    repo: "EdifyAI",
   },
   win: {
     target: [
@@ -22,8 +28,7 @@ module.exports = {
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
     shortcutName: "Edify AI",
-  },
-  portable: {
-    artifactName: "Edify-AI-Portable-${arch}.${ext}",
+    // Differential update — only download the changed parts
+    differentialPackage: true,
   },
 };
