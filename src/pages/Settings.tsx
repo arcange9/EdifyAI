@@ -1,313 +1,439 @@
 import { useState } from "react";
 import { useApp } from "../lib/app-context";
 import { v4 as uuid } from "uuid";
-import { Settings as SettingsIcon, KeyRound, Palette, Database, Eye, EyeOff, Check, X, Trash2, Info } from "lucide-react";
+import {
+  Settings as SettingsIcon, KeyRound, Palette, Database, Eye, EyeOff,
+  Check, X, Trash2, Info, Monitor, Moon, Sun, Keyboard, Shield,
+  Zap, BookOpen,
+} from "lucide-react";
 import type { ProviderConfig, ProviderType } from "../lib/types";
 import { providerDisplayName, providerDescription, defaultBaseUrl } from "../ai/providers/manager";
 
-type Tab = "general" | "providers" | "appearance" | "about";
+type Tab = "general" | "appearance" | "providers" | "storage" | "shortcuts" | "about";
 const PROVIDER_TYPES: ProviderType[] = ["openrouter", "google", "groq", "custom"];
 
 export default function Settings() {
-  const { preferences, setPreferences, providers, saveProviderConfig, deleteProviderConfig, setActiveProvider } = useApp();
+  const { preferences, setPreferences, providers, saveProviderConfig, setActiveProvider } = useApp();
   const [tab, setTab] = useState<Tab>("providers");
 
   const tabs = [
     { key: "providers" as Tab, label: "AI Providers", icon: KeyRound },
     { key: "appearance" as Tab, label: "Appearance", icon: Palette },
     { key: "general" as Tab, label: "General", icon: SettingsIcon },
+    { key: "storage" as Tab, label: "Storage", icon: Database },
+    { key: "shortcuts" as Tab, label: "Shortcuts", icon: Keyboard },
     { key: "about" as Tab, label: "About", icon: Info },
   ];
 
   return (
-    <div style={{ flex: 1, overflowY: "auto", padding: "32px 48px" }}>
-      <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 24 }}>Settings</h1>
-      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid var(--border)" }}>
+    <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
+      {/* Settings nav */}
+      <div style={{
+        width: 220, minWidth: 220,
+        background: "var(--bg-sidebar)",
+        borderRight: "1px solid var(--border)",
+        padding: "24px 12px",
+        overflowY: "auto",
+      }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, padding: "0 8px 16px" }}>Settings</h2>
         {tabs.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{
-            display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", border: "none", background: "none",
-            fontSize: 14, fontWeight: 600, cursor: "pointer",
-            color: tab === t.key ? "var(--accent)" : "var(--text-muted)",
-            borderBottom: tab === t.key ? "2px solid var(--accent)" : "2px solid transparent",
-          }}>
-            <t.icon size={16} /> {t.label}
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`nav-item ${tab === t.key ? "nav-item-active" : ""}`}
+          >
+            <t.icon size={18} style={{ flexShrink: 0 }} />
+            <span>{t.label}</span>
           </button>
         ))}
       </div>
 
-      {tab === "providers" && (
-        <ProvidersTab
-          providers={providers}
-          preferences={preferences}
-          saveProviderConfig={saveProviderConfig}
-          deleteProviderConfig={deleteProviderConfig}
-          setActiveProvider={setActiveProvider}
-        />
-      )}
+      {/* Settings content */}
+      <div className="scroll-container" style={{ padding: "32px 40px", flex: 1 }}>
+        <div style={{ maxWidth: 640, margin: "0 auto" }}>
+          {tab === "providers" && (
+            <ProvidersTab
+              providers={providers}
+              preferences={preferences}
+              saveProviderConfig={saveProviderConfig}
+              
+              setActiveProvider={setActiveProvider}
+            />
+          )}
 
-      {tab === "appearance" && (
-        <div className="fade-in" style={{ maxWidth: 500 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Theme</h3>
-          <div style={{ display: "flex", gap: 10 }}>
-            {(["light", "dark", "system"] as const).map((t) => (
-              <button key={t} onClick={() => setPreferences({ theme: t })}
-                className={preferences.theme === t ? "btn btn-primary" : "btn btn-outline"}
-                style={{ textTransform: "capitalize" }}>{t}</button>
-            ))}
-          </div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 28, marginBottom: 16 }}>Language</h3>
-          <input className="input" style={{ maxWidth: 300 }} defaultValue={preferences.language}
-            onBlur={(e) => setPreferences({ language: e.target.value })} />
-        </div>
-      )}
+          {tab === "appearance" && (
+            <div className="fade-in">
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Appearance</h3>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
+                Customize how Edify AI looks.
+              </p>
 
-      {tab === "general" && (
-        <div className="fade-in" style={{ maxWidth: 500 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Fallback Provider</h3>
-          <label style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, cursor: "pointer" }}>
-            <input type="checkbox" checked={preferences.fallbackEnabled}
-              onChange={(e) => setPreferences({ fallbackEnabled: e.target.checked })} style={{ width: 18, height: 18 }} />
-            <span style={{ fontSize: 14 }}>Enable fallback to secondary provider on failure</span>
-          </label>
-          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-            When the primary provider fails with a temporary error, Edify AI will try your fallback provider.
-          </div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 28, marginBottom: 16 }}>Storage</h3>
-          <button className="btn btn-outline" onClick={() => { if (confirm("Export all data? This will download a JSON file.")) {} }}>
-            <Database size={16} /> Export Data
-          </button>
-          <div style={{ marginTop: 8 }}>
-            <button className="btn btn-danger" onClick={() => { if (confirm("Delete ALL local data? This cannot be undone.")) { indexedDB.deleteDatabase("edifyai"); location.reload(); } }}>
-              <Trash2 size={16} /> Delete Local Data
-            </button>
-          </div>
-        </div>
-      )}
+              <div style={{ marginBottom: 28 }}>
+                <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 10 }}>Theme</label>
+                <div style={{ display: "flex", gap: 10 }}>
+                  {([
+                    { val: "light", icon: Sun, label: "Light" },
+                    { val: "dark", icon: Moon, label: "Dark" },
+                    { val: "system", icon: Monitor, label: "System" },
+                  ] as const).map((t) => (
+                    <button
+                      key={t.val}
+                      onClick={() => setPreferences({ theme: t.val })}
+                      className={preferences.theme === t.val ? "btn btn-primary" : "btn btn-outline"}
+                      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "16px 20px", minWidth: 80 }}
+                    >
+                      <t.icon size={20} />
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-      {tab === "about" && (
-        <div className="fade-in" style={{ maxWidth: 500 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 14, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Info size={28} color="white" />
+              <div style={{ marginBottom: 28 }}>
+                <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 10 }}>Language</label>
+                <input
+                  className="input"
+                  style={{ maxWidth: 300 }}
+                  defaultValue={preferences.language}
+                  onBlur={(e) => setPreferences({ language: e.target.value })}
+                  placeholder="English"
+                />
+              </div>
             </div>
-            <div>
-              <h2 style={{ fontSize: 22, fontWeight: 800 }}>Edify AI</h2>
-              <p style={{ fontSize: 14, color: "var(--text-muted)" }}>Turn Knowledge Into Understanding.</p>
+          )}
+
+          {tab === "general" && (
+            <div className="fade-in">
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>General</h3>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
+                Core application settings.
+              </p>
+
+              <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <Zap size={18} style={{ color: "var(--accent)" }} />
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>Fallback Provider</span>
+                </div>
+                <label style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, cursor: "pointer" }}>
+                  <input type="checkbox" className="checkbox" checked={preferences.fallbackEnabled}
+                    onChange={(e) => setPreferences({ fallbackEnabled: e.target.checked })} />
+                  <span style={{ fontSize: 14 }}>Enable fallback to secondary provider on failure</span>
+                </label>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                  When the primary provider fails with a temporary error, Edify AI will try your fallback provider.
+                </div>
+              </div>
             </div>
-          </div>
-          <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 8 }}>Version 1.0.0</div>
-          <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20 }}>Built for students, learners, and educators.</div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button className="btn btn-outline" onClick={() => window.open("https://github.com/arcange9/EdifyAI", "_blank")}>GitHub</button>
-            <button className="btn btn-outline" onClick={() => window.open("https://github.com/arcange9/EdifyAI#readme", "_blank")}>Documentation</button>
-            <button className="btn btn-outline" onClick={() => window.open("https://github.com/arcange9/EdifyAI/issues", "_blank")}>Feedback</button>
-          </div>
-          <div style={{ marginTop: 24, padding: 16, borderRadius: 10, background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>Study Books</h3>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>Free textbooks by the same author — download as DOCX:</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/python-mastery-notes/raw/main/docx/Python_Mastery_Notes_Complete_Book.docx", "_blank")}>
-                Python Mastery Notes — Complete Book
-              </button>
-              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ai-engineering-mastery/raw/main/docx/AI-Engineering-Mastery-90-Day-Journey.docx", "_blank")}>
-                AI Engineering Mastery — Complete Book
-              </button>
-              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/python-mastery-notes", "_blank")}>
-                Python Notes (individual chapters)
-              </button>
-              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ai-engineering-mastery", "_blank")}>
-                AI Engineering (individual chapters)
-              </button>
-              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ethical-hacking-book/raw/main/docx/Ethical_Hacking_Complete_Book.docx", "_blank")}>
-                Ethical Hacking — Complete Book
-              </button>
-              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ethical-hacking-book", "_blank")}>
-                Ethical Hacking (individual chapters)
-              </button>
+          )}
+
+          {tab === "storage" && (
+            <div className="fade-in">
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Storage & Data</h3>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
+                Manage your local data. All data is stored on your device.
+              </p>
+
+              <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <Database size={18} style={{ color: "var(--accent)" }} />
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>Export Data</span>
+                </div>
+                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
+                  Download all your projects, documents, notes, and settings as a JSON file.
+                </p>
+                <button className="btn btn-outline" onClick={() => alert("Export feature coming soon")}>
+                  <Database size={16} /> Export Data
+                </button>
+              </div>
+
+              <div className="card" style={{ padding: 20, border: "1px solid var(--error-light)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <Shield size={18} style={{ color: "var(--error)" }} />
+                  <span style={{ fontWeight: 600, fontSize: 15, color: "var(--error)" }}>Danger Zone</span>
+                </div>
+                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
+                  Delete ALL local data including projects, documents, notes, flashcards, and quizzes. This cannot be undone.
+                </p>
+                <button className="btn btn-danger" onClick={() => {
+                  if (confirm("Delete ALL local data? This cannot be undone.")) {
+                    indexedDB.deleteDatabase("edifyai");
+                    location.reload();
+                  }
+                }}>
+                  <Trash2 size={16} /> Delete Local Data
+                </button>
+              </div>
             </div>
-          </div>
-          <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 24, textAlign: "center" }}>
-            Designed by Mukamyi Izere Arcange
-          </p>
-          <p style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 8, textAlign: "center" }}>
-            Edify AI is an independent project and is not affiliated with NitroAI.
-          </p>
+          )}
+
+          {tab === "shortcuts" && (
+            <div className="fade-in">
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Keyboard Shortcuts</h3>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
+                Speed up your workflow with these shortcuts.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  { keys: "Ctrl + N", action: "New Study Project" },
+                  { keys: "Ctrl + K", action: "Quick Search" },
+                  { keys: "Ctrl + ,", action: "Open Settings" },
+                  { keys: "Ctrl + B", action: "Toggle Sidebar" },
+                  { keys: "Esc", action: "Close Modal / Dialog" },
+                ].map((s) => (
+                  <div key={s.keys} className="card" style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 14 }}>{s.action}</span>
+                    <kbd style={{
+                      padding: "4px 10px", borderRadius: "var(--radius-sm)",
+                      background: "var(--surface-3)", border: "1px solid var(--border)",
+                      fontSize: 12, fontFamily: "var(--font-mono)", fontWeight: 600,
+                    }}>
+                      {s.keys}
+                    </kbd>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tab === "about" && (
+            <div className="fade-in">
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: "var(--radius-lg)",
+                  background: "var(--brand-gradient)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "var(--shadow-brand)",
+                }}>
+                  <BookOpen size={28} color="white" />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: 22, fontWeight: 800 }}>Edify AI</h2>
+                  <p style={{ fontSize: 14, color: "var(--text-muted)" }}>Turn Knowledge Into Understanding.</p>
+                </div>
+              </div>
+
+              <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+                <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>Version 1.0.0</div>
+                <div style={{ fontSize: 14, color: "var(--text-muted)" }}>Built for students, learners, and educators.</div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
+                <button className="btn btn-outline" onClick={() => window.open("https://github.com/arcange9/EdifyAI", "_blank")}>GitHub</button>
+                <button className="btn btn-outline" onClick={() => window.open("https://github.com/arcange9/EdifyAI#readme", "_blank")}>Documentation</button>
+                <button className="btn btn-outline" onClick={() => window.open("https://github.com/arcange9/EdifyAI/issues", "_blank")}>Feedback</button>
+              </div>
+
+              <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                  <BookOpen size={16} style={{ color: "var(--accent)" }} /> Study Books
+                </h3>
+                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
+                  Free textbooks by the same author — download as DOCX:
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <button className="btn btn-outline btn-block" style={{ justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/python-mastery-notes/raw/main/docx/Python_Mastery_Notes_Complete_Book.docx", "_blank")}>
+                    Python Mastery Notes — Complete Book
+                  </button>
+                  <button className="btn btn-outline btn-block" style={{ justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ai-engineering-mastery/raw/main/docx/AI-Engineering-Mastery-90-Day-Journey.docx", "_blank")}>
+                    AI Engineering Mastery — Complete Book
+                  </button>
+                  <button className="btn btn-outline btn-block" style={{ justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ethical-hacking-book/raw/main/docx/Ethical_Hacking_Complete_Book.docx", "_blank")}>
+                    Ethical Hacking — Complete Book
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>
+                  Designed by Mukamyi Izere Arcange
+                </p>
+                <p style={{ fontSize: 12, color: "var(--text-faint)" }}>
+                  Edify AI is an independent project and is not affiliated with NitroAI.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
-function ProvidersTab({ providers, preferences, saveProviderConfig, deleteProviderConfig, setActiveProvider }: {
+function ProvidersTab({ providers, preferences, saveProviderConfig, setActiveProvider }: {
   providers: ProviderConfig[];
   preferences: { defaultProviderId?: string; fallbackProviderId?: string; fallbackEnabled: boolean };
   saveProviderConfig: (config: ProviderConfig, apiKey?: string) => Promise<void>;
-  deleteProviderConfig: (id: string) => Promise<void>;
+  
   setActiveProvider: (id: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState<ProviderConfig | null>(null);
+  const [apiKey, setApiKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [modelName, setModelName] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [customBaseUrl, setCustomBaseUrl] = useState("");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  function startEdit(type: ProviderType) {
+    const existing = providers.find((p) => p.type === type);
+    setEditing(existing || {
+      id: uuid(), type, name: providerDisplayName(type),
+      apiKey: "", baseUrl: defaultBaseUrl(type), model: "",
+      enabled: true, createdAt: Date.now(),
+    });
+    setApiKey(existing?.apiKey || "");
+    setModelName(existing?.model || "");
+    setCustomName(existing?.name || "");
+    setCustomBaseUrl(existing?.baseUrl || "");
+    setShowKey(false);
+    setTestResult(null);
+  }
+
+  async function handleSave() {
+    if (!editing) return;
+    const config = { ...editing, apiKey, model: modelName, name: customName || providerDisplayName(editing.type), baseUrl: customBaseUrl || defaultBaseUrl(editing.type) };
+    await saveProviderConfig(config, apiKey);
+    await setActiveProvider(config.id);
+    setEditing(null);
+  }
+
+  async function handleTest() {
+    if (!editing || !apiKey) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const { createProvider } = await import("../ai/providers/manager");
+      const config = { ...editing, apiKey, model: modelName || "gpt-4o-mini" };
+      const provider = await createProvider(config);
+      if (provider) {
+        const health = await provider.healthCheck();
+        setTestResult({ ok: health.ok, message: health.message });
+      } else {
+        setTestResult({ ok: false, message: "Could not create provider" });
+      }
+    } catch (err) {
+      setTestResult({ ok: false, message: err instanceof Error ? err.message : "Connection failed" });
+    }
+    setTesting(false);
+  }
 
   return (
     <div className="fade-in">
-      <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>AI Providers</h3>
-      <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20 }}>
+      <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>AI Providers</h3>
+      <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
         Configure how Edify AI powers your learning. API keys are stored securely on your device.
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 600 }}>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {PROVIDER_TYPES.map((type) => {
           const configs = providers.filter((p) => p.type === type);
           const configured = configs.length > 0;
+          const isActive = configs.some((c) => c.id === preferences.defaultProviderId);
           return (
             <div key={type} className="card" style={{ padding: 18 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{providerDisplayName(type)}</div>
-                  <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{providerDescription(type)}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: "var(--radius)",
+                    background: configured ? "var(--accent-light)" : "var(--surface-3)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <KeyRound size={20} style={{ color: configured ? "var(--accent)" : "var(--text-faint)" }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>{providerDisplayName(type)}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{providerDescription(type)}</div>
+                  </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: configured ? "var(--success)" : "var(--text-faint)" }}>
-                    {configured ? "✓ Configured" : "Not configured"}
-                  </span>
-                  <button className="btn btn-outline" style={{ padding: "6px 14px", fontSize: 13 }}
-                    onClick={() => {
-                      const c = configs[0];
-                      if (c) setEditing(c);
-                      else {
-                        const nc: ProviderConfig = { id: uuid(), type, name: providerDisplayName(type), apiKey: "", baseUrl: defaultBaseUrl(type), model: "", enabled: true, createdAt: Date.now() };
-                        setEditing(nc);
-                      }
-                    }}>
-                    {configured ? "Manage" : "Configure"}
+                  {isActive && <span className="badge badge-success"><Check size={12} /> Active</span>}
+                  {configured && !isActive && <span className="status-dot success" />}
+                  {!configured && <span className="status-dot neutral" />}
+                  <button className="btn btn-outline btn-sm" onClick={() => startEdit(type)}>
+                    {configured ? "Configure" : "Setup"}
                   </button>
                 </div>
               </div>
+              {configured && configs[0].model && (
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span className="badge badge-neutral">Model</span>
+                  <span style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>{configs[0].model}</span>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      {providers.length > 0 && (
-        <div style={{ marginTop: 24, maxWidth: 600 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Default Provider</h3>
-          <select className="input" style={{ maxWidth: 300 }} value={preferences.defaultProviderId ?? ""}
-            onChange={(e) => setActiveProvider(e.target.value)}>
-            <option value="">— Select —</option>
-            {providers.filter((p) => p.enabled).map((p) => (
-              <option key={p.id} value={p.id}>{p.name} / {p.model || "auto"}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
+      {/* Edit modal */}
       {editing && (
-        <ProviderEditor
-          config={editing}
-          onClose={() => setEditing(null)}
-          onSave={async (config, key) => { await saveProviderConfig(config, key); setEditing(null); }}
-          onDelete={async () => { await deleteProviderConfig(editing.id); setEditing(null); }}
-        />
-      )}
-    </div>
-  );
-}
+        <div className="modal-overlay" onClick={() => setEditing(null)}>
+          <div className="modal" style={{ width: 480 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ fontSize: 17, fontWeight: 700 }}>Configure {providerDisplayName(editing.type)}</h3>
+              <button className="btn btn-ghost btn-icon" onClick={() => setEditing(null)}>✕</button>
+            </div>
+            <div className="modal-body">
+              {editing.type === "custom" && (
+                <>
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Provider Name</label>
+                    <input className="input" placeholder="My AI Provider" value={customName} onChange={(e) => setCustomName(e.target.value)} />
+                  </div>
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Base URL</label>
+                    <input className="input" placeholder="https://example.com/v1" value={customBaseUrl} onChange={(e) => setCustomBaseUrl(e.target.value)} />
+                  </div>
+                </>
+              )}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>API Key</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    className="input"
+                    type={showKey ? "text" : "password"}
+                    placeholder="••••••••••••"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                  />
+                  <button onClick={() => setShowKey(!showKey)}
+                    style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+                    {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Model (optional)</label>
+                <input className="input" placeholder="Auto-select if empty" value={modelName} onChange={(e) => setModelName(e.target.value)} />
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 16 }}>
+                Your API key is stored locally using secure OS-level storage.
+              </p>
 
-function ProviderEditor({ config, onClose, onSave, onDelete }: {
-  config: ProviderConfig;
-  onClose: () => void;
-  onSave: (config: ProviderConfig, apiKey?: string) => Promise<void>;
-  onDelete: () => Promise<void>;
-}) {
-  const [name, setName] = useState(config.name);
-  const [apiKey, setApiKey] = useState(config.apiKey);
-  const [showKey, setShowKey] = useState(false);
-  const [baseUrl, setBaseUrl] = useState(config.baseUrl ?? "");
-  const [model, setModel] = useState(config.model);
-  const [fallbackModel, setFallbackModel] = useState(config.fallbackModel ?? "");
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
-
-  async function handleTest() {
-    setTesting(true);
-    setTestResult(null);
-    try {
-      const updated: ProviderConfig = { ...config, name, apiKey, baseUrl, model, enabled: true };
-      const { createProvider } = await import("../ai/providers/manager");
-      const provider = await createProvider(updated);
-      if (provider) {
-        const health = await provider.healthCheck();
-        setTestResult({ ok: health.ok, message: health.message });
-      } else {
-        setTestResult({ ok: false, message: "Could not create provider." });
-      }
-    } catch (err) {
-      setTestResult({ ok: false, message: err instanceof Error ? err.message : "Failed" });
-    }
-    setTesting(false);
-  }
-
-  async function handleSave() {
-    const updated: ProviderConfig = {
-      ...config, name, apiKey,
-      baseUrl: baseUrl || defaultBaseUrl(config.type),
-      model, fallbackModel: fallbackModel || undefined,
-      enabled: true,
-    };
-    await onSave(updated, apiKey);
-  }
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }} onClick={onClose}>
-      <div className="card fade-in" style={{ padding: 28, width: 480, maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>{providerDisplayName(config.type)}</h3>
-        {config.type === "custom" && (
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Provider Name</label>
-            <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-        )}
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>API Key</label>
-          <div style={{ position: "relative" }}>
-            <input className="input" type={showKey ? "text" : "password"} placeholder="••••••••••••" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
-            <button onClick={() => setShowKey(!showKey)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer" }}>
-              {showKey ? <EyeOff size={16} color="var(--text-muted)" /> : <Eye size={16} color="var(--text-muted)" />}
-            </button>
-          </div>
-          <div style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 4 }}>Your API key is stored locally on this device.</div>
-        </div>
-        {(config.type === "openrouter" || config.type === "groq" || config.type === "custom") && (
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Base URL</label>
-            <input className="input" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={defaultBaseUrl(config.type)} />
-          </div>
-        )}
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Default Model</label>
-          <input className="input" value={model} onChange={(e) => setModel(e.target.value)} placeholder="Auto-select" />
-        </div>
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Fallback Model (optional)</label>
-          <input className="input" value={fallbackModel} onChange={(e) => setFallbackModel(e.target.value)} placeholder="Used if primary fails" />
-        </div>
-        {testResult && (
-          <div style={{ padding: 12, borderRadius: 10, marginBottom: 16, background: testResult.ok ? "var(--success-light)" : "var(--danger-light)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {testResult.ok ? <Check size={18} color="var(--success)" /> : <X size={18} color="var(--danger)" />}
-              <span style={{ fontSize: 13, fontWeight: 600, color: testResult.ok ? "var(--success)" : "var(--danger)" }}>{testResult.message}</span>
+              {testResult && (
+                <div className={`card-inner ${testResult.ok ? "" : ""}`} style={{
+                  padding: 12, marginBottom: 16,
+                  background: testResult.ok ? "var(--success-bg)" : "var(--error-bg)",
+                  border: `1px solid ${testResult.ok ? "var(--success-light)" : "var(--error-light)"}`,
+                  display: "flex", alignItems: "center", gap: 8,
+                }}>
+                  {testResult.ok ? <Check size={16} style={{ color: "var(--success)" }} /> : <X size={16} style={{ color: "var(--error)" }} />}
+                  <span style={{ fontSize: 13, color: testResult.ok ? "var(--success)" : "var(--error)" }}>{testResult.message}</span>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline" onClick={handleTest} disabled={!apiKey.trim() || testing}>
+                {testing ? "Testing..." : "Test Connection"}
+              </button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={!apiKey.trim()}>
+                <Check size={16} /> Save
+              </button>
             </div>
           </div>
-        )}
-        <div style={{ display: "flex", gap: 8, justifyContent: "space-between" }}>
-          <div>
-            <button className="btn btn-outline" onClick={handleTest} disabled={testing || !apiKey}>{testing ? "Testing…" : "Test Connection"}</button>
-            {config.type === "custom" && <button className="btn btn-danger" style={{ marginLeft: 8 }} onClick={onDelete}><Trash2 size={14} /></button>}
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleSave} disabled={!apiKey}>Save</button>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

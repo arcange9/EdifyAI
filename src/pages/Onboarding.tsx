@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../lib/app-context";
 import { v4 as uuid } from "uuid";
-import { BookOpen, ArrowRight, ArrowLeft, Check, X } from "lucide-react";
+import { BookOpen, ArrowRight, ArrowLeft, Check, X, Sparkles } from "lucide-react";
 import type { ProviderConfig, ProviderType } from "../lib/types";
 import { providerDisplayName, providerDescription, defaultBaseUrl } from "../ai/providers/manager";
 
@@ -29,26 +29,20 @@ export default function Onboarding() {
     setTestResult(null);
     try {
       const config: ProviderConfig = {
-        id: uuid(),
-        type: selectedType,
+        id: uuid(), type: selectedType,
         name: selectedType === "custom" ? (customName || "Custom Provider") : providerDisplayName(selectedType),
         apiKey,
         baseUrl: selectedType === "custom" ? customBaseUrl : defaultBaseUrl(selectedType),
         model: modelName || "",
-        enabled: true,
-        createdAt: Date.now(),
+        enabled: true, createdAt: Date.now(),
       };
-      // Create a temporary provider to test
       const { createProvider } = await import("../ai/providers/manager");
       const provider = await createProvider(config);
       if (provider) {
-        // Set a default model if none specified
         if (!config.model) {
           const defaults: Record<string, string> = {
-            openrouter: "openai/gpt-4o-mini",
-            google: "gemini-2.0-flash",
-            groq: "llama-3.3-70b-versatile",
-            custom: "gpt-4o-mini",
+            openrouter: "openai/gpt-4o-mini", google: "gemini-2.0-flash",
+            groq: "llama-3.3-70b-versatile", custom: "gpt-4o-mini",
           };
           config.model = defaults[selectedType] || "gpt-4o-mini";
           setModelName(config.model);
@@ -79,10 +73,15 @@ export default function Onboarding() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", padding: 20 }}>
-      <div className="card fade-in" style={{ width: 520, maxWidth: "95vw", padding: 40 }}>
+      <div className="card fade-in" style={{ width: 520, maxWidth: "95vw", padding: 40, boxShadow: "var(--shadow-xl)" }}>
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 12, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: "var(--radius-md)",
+            background: "var(--brand-gradient)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "var(--shadow-brand)",
+          }}>
             <BookOpen size={26} color="white" strokeWidth={2.2} />
           </div>
           <div>
@@ -94,20 +93,22 @@ export default function Onboarding() {
         {/* Progress dots */}
         <div style={{ display: "flex", gap: 6, marginBottom: 28 }}>
           {stepOrder.map((s, i) => (
-            <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= stepIndex ? "var(--accent)" : "var(--border-strong)" }} />
+            <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= stepIndex ? "var(--accent)" : "var(--border-strong)", transition: "var(--transition)" }} />
           ))}
         </div>
 
-        {/* Welcome */}
         {step === "welcome" && (
-          <div>
+          <div className="fade-in">
             <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Welcome to Edify AI</h2>
-            <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 24 }}>
+            <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 24, lineHeight: 1.6 }}>
               Your personal AI-powered study workspace. Import documents, generate notes, flashcards, quizzes, and chat with your learning materials.
             </p>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
-              To get started, you'll need to configure an AI provider. This powers all AI features — notes generation, flashcards, quizzes, and chat.
-            </p>
+            <div className="card-inner" style={{ padding: 16, marginBottom: 24, display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <Sparkles size={20} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 2 }} />
+              <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                To get started, you'll need to configure an AI provider. This powers all AI features — notes, flashcards, quizzes, and chat.
+              </div>
+            </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button className="btn btn-ghost" onClick={finish}>Skip for now</button>
               <button className="btn btn-primary" onClick={() => setStep("provider")} style={{ marginLeft: "auto" }}>
@@ -117,9 +118,8 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* Provider selection */}
         {step === "provider" && (
-          <div>
+          <div className="fade-in">
             <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Choose AI Provider</h2>
             <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20 }}>
               How should Edify AI power your learning experience?
@@ -129,10 +129,8 @@ export default function Onboarding() {
                 <button
                   key={type}
                   onClick={() => { setSelectedType(type); setStep("key"); }}
-                  className="card"
-                  style={{ padding: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", textAlign: "left", border: "1px solid var(--border)" }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
-                  onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                  className="card card-hover"
+                  style={{ padding: 16, display: "flex", alignItems: "center", justifyContent: "space-between", textAlign: "left" }}
                 >
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{providerDisplayName(type)}</div>
@@ -148,39 +146,27 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* API Key */}
         {step === "key" && selectedType && (
-          <div>
+          <div className="fade-in">
             <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{providerDisplayName(selectedType)}</h2>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20 }}>
-              Enter your API key to connect.
-            </p>
+            <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20 }}>Enter your API key to connect.</p>
             {selectedType === "custom" && (
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Provider Name</label>
-                <input className="input" placeholder="My AI Provider" value={customName} onChange={(e) => setCustomName(e.target.value)} />
-              </div>
-            )}
-            {selectedType === "custom" && (
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Base URL</label>
-                <input className="input" placeholder="https://example.com/v1" value={customBaseUrl} onChange={(e) => setCustomBaseUrl(e.target.value)} />
-              </div>
+              <>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Provider Name</label>
+                  <input className="input" placeholder="My AI Provider" value={customName} onChange={(e) => setCustomName(e.target.value)} />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Base URL</label>
+                  <input className="input" placeholder="https://example.com/v1" value={customBaseUrl} onChange={(e) => setCustomBaseUrl(e.target.value)} />
+                </div>
+              </>
             )}
             <div style={{ marginBottom: 12 }}>
               <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>API Key</label>
               <div style={{ position: "relative" }}>
-                <input
-                  className="input"
-                  type={showKey ? "text" : "password"}
-                  placeholder="••••••••••••"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
-                <button
-                  onClick={() => setShowKey(!showKey)}
-                  style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--text-muted)" }}
-                >
+                <input className="input" type={showKey ? "text" : "password"} placeholder="••••••••••••" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+                <button onClick={() => setShowKey(!showKey)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
                   {showKey ? "Hide" : "Show"}
                 </button>
               </div>
@@ -190,7 +176,7 @@ export default function Onboarding() {
               <input className="input" placeholder="Auto-select if empty" value={modelName} onChange={(e) => setModelName(e.target.value)} />
             </div>
             <p style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 16 }}>
-              Your API key is stored locally on this device using secure OS-level storage.
+              Your API key is stored locally using secure OS-level storage.
             </p>
             <div style={{ display: "flex", gap: 8 }}>
               <button className="btn btn-ghost" onClick={() => setStep("provider")}><ArrowLeft size={16} /> Back</button>
@@ -201,46 +187,40 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* Test result */}
         {step === "test" && (
-          <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>Testing Connection</h2>
-            {testing && <p style={{ fontSize: 15, color: "var(--text-muted)" }}>Connecting to {selectedType && providerDisplayName(selectedType)}…</p>}
-            {testResult && (
-              <div style={{ padding: 16, borderRadius: 10, marginBottom: 20, background: testResult.ok ? "var(--success-light)" : "var(--danger-light)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  {testResult.ok ? <Check size={20} color="var(--success)" /> : <X size={20} color="var(--danger)" />}
-                  <span style={{ fontWeight: 700, color: testResult.ok ? "var(--success)" : "var(--danger)" }}>
-                    {testResult.ok ? "Connection successful" : "Connection failed"}
-                  </span>
+          <div className="fade-in" style={{ textAlign: "center", padding: "20px 0" }}>
+            {testing && (
+              <>
+                <div style={{ marginBottom: 16 }}>
+                  <div className="animate-spin" style={{ width: 40, height: 40, border: 3, borderColor: "var(--accent)", borderStyle: "solid", borderRadius: "50%", borderTopColor: "transparent", display: "inline-block" }} />
                 </div>
-                <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{testResult.message}</p>
-              </div>
+                <p style={{ fontSize: 15, color: "var(--text-muted)" }}>Testing connection...</p>
+              </>
             )}
             {!testing && testResult && (
-              <div style={{ display: "flex", gap: 8 }}>
-                {!testResult.ok && <button className="btn btn-ghost" onClick={() => setStep("key")}><ArrowLeft size={16} /> Back to edit</button>}
-                {testResult.ok && <button className="btn btn-primary" onClick={() => setStep("model")} style={{ marginLeft: "auto" }}>Continue <ArrowRight size={16} /></button>}
-                {testResult.ok && <button className="btn btn-outline" onClick={finish}>Skip to finish</button>}
-              </div>
+              <>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center", background: testResult.ok ? "var(--success-bg)" : "var(--error-bg)" }}>
+                  {testResult.ok ? <Check size={28} style={{ color: "var(--success)" }} /> : <X size={28} style={{ color: "var(--error)" }} />}
+                </div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{testResult.ok ? "Connected!" : "Connection Failed"}</h2>
+                <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>{testResult.message}</p>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                  <button className="btn btn-ghost" onClick={() => setStep("key")}><ArrowLeft size={16} /> Back</button>
+                  {testResult.ok && <button className="btn btn-primary" onClick={finish}>Continue <ArrowRight size={18} /></button>}
+                </div>
+              </>
             )}
           </div>
         )}
 
-        {/* Model selection */}
-        {step === "model" && (
-          <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Model Selected</h2>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20 }}>
-              Your default model is set. You can change it anytime in Settings.
-            </p>
-            <div className="card" style={{ padding: 16, marginBottom: 20 }}>
-              <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>Default Model</div>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>{modelName || "Auto-selected"}</div>
+        {step === "done" && (
+          <div className="fade-in" style={{ textAlign: "center", padding: "20px 0" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--success-bg)" }}>
+              <Check size={28} style={{ color: "var(--success)" }} />
             </div>
-            <button className="btn btn-primary" onClick={finish} style={{ width: "100%", justifyContent: "center" }}>
-              Start Using Edify AI <ArrowRight size={18} />
-            </button>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>You're all set!</h2>
+            <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>Edify AI is ready to help you learn.</p>
+            <button className="btn btn-primary" onClick={finish}>Start Learning <ArrowRight size={18} /></button>
           </div>
         )}
       </div>
