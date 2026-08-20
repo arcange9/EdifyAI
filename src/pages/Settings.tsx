@@ -4,7 +4,7 @@ import { v4 as uuid } from "uuid";
 import {
   Settings as SettingsIcon, KeyRound, Palette, Database, Eye, EyeOff,
   Check, X, Trash2, Info, Monitor, Moon, Sun, Keyboard, Shield,
-  Zap, BookOpen,
+  Zap, BookOpen, RefreshCw, Download, AlertCircle, Loader2,
 } from "lucide-react";
 import type { ProviderConfig, ProviderType } from "../lib/types";
 import { providerDisplayName, providerDescription, defaultBaseUrl } from "../ai/providers/manager";
@@ -15,6 +15,8 @@ const PROVIDER_TYPES: ProviderType[] = ["openrouter", "google", "groq", "custom"
 export default function Settings() {
   const { preferences, setPreferences, providers, saveProviderConfig, setActiveProvider } = useApp();
   const [tab, setTab] = useState<Tab>("providers");
+  const [updateState, setUpdateState] = useState<"idle" | "checking" | "available" | "downloading" | "ready" | "error" | "latest">("idle");
+  const [updateMsg, setUpdateMsg] = useState("");
 
   const tabs = [
     { key: "providers" as Tab, label: "AI Providers", icon: KeyRound },
@@ -24,6 +26,55 @@ export default function Settings() {
     { key: "shortcuts" as Tab, label: "Shortcuts", icon: Keyboard },
     { key: "about" as Tab, label: "About", icon: Info },
   ];
+
+  async function checkForUpdates() {
+    const edify = (window as unknown as Record<string, { updater: { check: () => Promise<{ available: boolean; message: string }> } }>).edify;
+    if (!edify?.updater) {
+      setUpdateState("error");
+      setUpdateMsg("Updates not available — running in development mode.");
+      return;
+    }
+    setUpdateState("checking");
+    setUpdateMsg("");
+    try {
+      const result = await edify.updater.check();
+      if (result.available) {
+        setUpdateState("available");
+        setUpdateMsg(result.message || "A new version is available.");
+      } else {
+        setUpdateState("latest");
+        setUpdateMsg("You are running the latest version.");
+      }
+    } catch (err) {
+      setUpdateState("error");
+      setUpdateMsg(err instanceof Error ? err.message : "Update check failed.");
+    }
+  }
+
+  async function downloadUpdate() {
+    const edify = (window as unknown as Record<string, { updater: { download: () => Promise<{ ok: boolean; message: string }> } }>).edify;
+    if (!edify?.updater) return;
+    setUpdateState("downloading");
+    try {
+      const result = await edify.updater.download();
+      if (result.ok) {
+        setUpdateState("ready");
+        setUpdateMsg("Update downloaded. Click to install and restart.");
+      } else {
+        setUpdateState("error");
+        setUpdateMsg(result.message || "Download failed.");
+      }
+    } catch (err) {
+      setUpdateState("error");
+      setUpdateMsg(err instanceof Error ? err.message : "Download failed.");
+    }
+  }
+
+  async function installUpdate() {
+    const edify = (window as unknown as Record<string, { updater: { install: () => Promise<void> } }>).edify;
+    if (!edify?.updater) return;
+    await edify.updater.install();
+  }
 
   return (
     <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
@@ -56,7 +107,6 @@ export default function Settings() {
               providers={providers}
               preferences={preferences}
               saveProviderConfig={saveProviderConfig}
-              
               setActiveProvider={setActiveProvider}
             />
           )}
@@ -67,7 +117,6 @@ export default function Settings() {
               <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
                 Customize how Edify AI looks.
               </p>
-
               <div style={{ marginBottom: 28 }}>
                 <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 10 }}>Theme</label>
                 <div style={{ display: "flex", gap: 10 }}>
@@ -88,7 +137,6 @@ export default function Settings() {
                   ))}
                 </div>
               </div>
-
               <div style={{ marginBottom: 28 }}>
                 <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 10 }}>Language</label>
                 <input
@@ -108,7 +156,6 @@ export default function Settings() {
               <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
                 Core application settings.
               </p>
-
               <div className="card" style={{ padding: 20, marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                   <Zap size={18} style={{ color: "var(--accent)" }} />
@@ -132,7 +179,6 @@ export default function Settings() {
               <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
                 Manage your local data. All data is stored on your device.
               </p>
-
               <div className="card" style={{ padding: 20, marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                   <Database size={18} style={{ color: "var(--accent)" }} />
@@ -145,7 +191,6 @@ export default function Settings() {
                   <Database size={16} /> Export Data
                 </button>
               </div>
-
               <div className="card" style={{ padding: 20, border: "1px solid var(--error-light)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                   <Shield size={18} style={{ color: "var(--error)" }} />
@@ -213,8 +258,73 @@ export default function Settings() {
               </div>
 
               <div className="card" style={{ padding: 20, marginBottom: 16 }}>
-                <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>Version 1.0.0</div>
+                <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>Version 1.1.0</div>
                 <div style={{ fontSize: 14, color: "var(--text-muted)" }}>Built for students, learners, and educators.</div>
+              </div>
+
+              {/* Update section */}
+              <div className="card" style={{ padding: 20, marginBottom: 16, border: "1px solid var(--border)" }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                  <RefreshCw size={16} style={{ color: "var(--accent)" }} /> Updates
+                </h3>
+                {updateState === "idle" && (
+                  <button className="btn btn-outline" onClick={checkForUpdates}>
+                    <RefreshCw size={16} /> Check for Updates
+                  </button>
+                )}
+                {updateState === "checking" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--text-muted)" }}>
+                    <Loader2 size={18} className="animate-spin" style={{ color: "var(--accent)" }} />
+                    <span style={{ fontSize: 14 }}>Checking for updates...</span>
+                  </div>
+                )}
+                {updateState === "latest" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--success-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Check size={16} style={{ color: "var(--success)" }} />
+                    </div>
+                    <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>{updateMsg}</span>
+                  </div>
+                )}
+                {updateState === "available" && (
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--accent-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Download size={16} style={{ color: "var(--accent)" }} />
+                      </div>
+                      <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>{updateMsg}</span>
+                    </div>
+                    <button className="btn btn-primary" onClick={downloadUpdate}>
+                      <Download size={16} /> Download Update
+                    </button>
+                  </div>
+                )}
+                {updateState === "downloading" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--text-muted)" }}>
+                    <Loader2 size={18} className="animate-spin" style={{ color: "var(--accent)" }} />
+                    <span style={{ fontSize: 14 }}>Downloading update...</span>
+                  </div>
+                )}
+                {updateState === "ready" && (
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--success-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Check size={16} style={{ color: "var(--success)" }} />
+                      </div>
+                      <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>{updateMsg}</span>
+                    </div>
+                    <button className="btn btn-primary" onClick={installUpdate}>
+                      <RefreshCw size={16} /> Restart & Install
+                    </button>
+                  </div>
+                )}
+                {updateState === "error" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <AlertCircle size={18} style={{ color: "var(--error)" }} />
+                    <span style={{ fontSize: 14, color: "var(--text-muted)" }}>{updateMsg}</span>
+                    <button className="btn btn-ghost btn-sm" onClick={checkForUpdates}>Retry</button>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
@@ -263,7 +373,6 @@ function ProvidersTab({ providers, preferences, saveProviderConfig, setActivePro
   providers: ProviderConfig[];
   preferences: { defaultProviderId?: string; fallbackProviderId?: string; fallbackEnabled: boolean };
   saveProviderConfig: (config: ProviderConfig, apiKey?: string) => Promise<void>;
-  
   setActiveProvider: (id: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState<ProviderConfig | null>(null);
@@ -408,14 +517,12 @@ function ProvidersTab({ providers, preferences, saveProviderConfig, setActivePro
                 <input className="input" placeholder="Auto-select if empty" value={modelName} onChange={(e) => setModelName(e.target.value)} />
               </div>
               <p style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 16 }}>
-                Your API key is stored locally using secure OS-level storage.
+                Your API key is stored locally using secure OS-level storage. It never leaves your device.
               </p>
-
               {testResult && (
-                <div className={`card-inner ${testResult.ok ? "" : ""}`} style={{
-                  padding: 12, marginBottom: 16,
+                <div style={{
+                  padding: "12px 16px", borderRadius: "var(--radius)", marginBottom: 16,
                   background: testResult.ok ? "var(--success-bg)" : "var(--error-bg)",
-                  border: `1px solid ${testResult.ok ? "var(--success-light)" : "var(--error-light)"}`,
                   display: "flex", alignItems: "center", gap: 8,
                 }}>
                   {testResult.ok ? <Check size={16} style={{ color: "var(--success)" }} /> : <X size={16} style={{ color: "var(--error)" }} />}
