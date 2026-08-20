@@ -118,6 +118,12 @@ export default function Settings() {
               <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ai-engineering-mastery", "_blank")}>
                 AI Engineering (individual chapters)
               </button>
+              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ethical-hacking-book/raw/main/docx/Ethical_Hacking_Complete_Book.docx", "_blank")}>
+                Ethical Hacking — Complete Book
+              </button>
+              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ethical-hacking-book", "_blank")}>
+                Ethical Hacking (individual chapters)
+              </button>
             </div>
           </div>
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 24, textAlign: "center" }}>
