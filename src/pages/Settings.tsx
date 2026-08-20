@@ -109,7 +109,7 @@ export default function Settings() {
               <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/python-mastery-notes/raw/main/docx/Python_Mastery_Notes_Complete_Book.docx", "_blank")}>
                 Python Mastery Notes — Complete Book
               </button>
-              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ai-engineering-mastery/raw/main/docx/AI_Engineering_Mastery_Complete_Book.docx", "_blank")}>
+              <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/ai-engineering-mastery/raw/main/docx/AI-Engineering-Mastery-90-Day-Journey.docx", "_blank")}>
                 AI Engineering Mastery — Complete Book
               </button>
               <button className="btn btn-outline" style={{ textAlign: "left", justifyContent: "flex-start" }} onClick={() => window.open("https://github.com/arcange9/python-mastery-notes", "_blank")}>
