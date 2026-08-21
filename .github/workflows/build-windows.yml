@@ -3,7 +3,6 @@ name: Build & Release Edify AI
 on:
   push:
     branches: ["main"]
-    tags: ["v*"]
   workflow_dispatch:
     inputs:
       prerelease:

@@ -17,7 +17,7 @@
     "app": "npm run build && electron .",
     "app:nobuild": "electron .",
     "dist": "npm run build && electron-builder",
-    "dist:win": "npm run build && electron-builder --win",
+    "dist:win": "npm run build && electron-builder --win --publish never",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
