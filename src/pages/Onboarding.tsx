@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../lib/app-context";
 import { v4 as uuid } from "uuid";
-import { BookOpen, ArrowRight, ArrowLeft, Check, X, Sparkles } from "lucide-react";
+import { BookOpen, ArrowRight, ArrowLeft, Check, X, Sparkles, Loader2, Eye, EyeOff } from "lucide-react";
 import type { ProviderConfig, ProviderType } from "../lib/types";
 import { providerDisplayName, providerDescription, defaultBaseUrl } from "../ai/providers/manager";
 
-type Step = "welcome" | "provider" | "key" | "test" | "model" | "done";
+type Step = "welcome" | "provider" | "key" | "test" | "done";
 
 const PROVIDER_TYPES: ProviderType[] = ["openrouter", "google", "groq", "custom"];
 
@@ -68,14 +68,15 @@ export default function Onboarding() {
     navigate("/");
   }
 
-  const stepOrder: Step[] = ["welcome", "provider", "key", "test", "model", "done"];
+  const stepOrder: Step[] = ["welcome", "provider", "key", "test", "done"];
   const stepIndex = stepOrder.indexOf(step);
+  const stepLabels = ["Welcome", "Provider", "API Key", "Test", "Done"];
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", padding: 20 }}>
       <div className="card fade-in" style={{ width: 520, maxWidth: "95vw", padding: 40, boxShadow: "var(--shadow-xl)" }}>
         {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
           <div style={{
             width: 48, height: 48, borderRadius: "var(--radius-md)",
             background: "var(--brand-gradient)",
@@ -90,11 +91,24 @@ export default function Onboarding() {
           </div>
         </div>
 
-        {/* Progress dots */}
-        <div style={{ display: "flex", gap: 6, marginBottom: 28 }}>
-          {stepOrder.map((s, i) => (
-            <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= stepIndex ? "var(--accent)" : "var(--border-strong)", transition: "var(--transition)" }} />
-          ))}
+        {/* Progress bar with labels */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+            {stepOrder.map((s, i) => (
+              <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= stepIndex ? "var(--accent)" : "var(--border-strong)", transition: "var(--transition)" }} />
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            {stepLabels.map((label, i) => (
+              <span key={label} style={{
+                fontSize: 10, fontWeight: 600,
+                color: i === stepIndex ? "var(--accent)" : "var(--text-faint)",
+                transition: "color var(--transition)",
+              }}>
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
 
         {step === "welcome" && (
@@ -134,7 +148,7 @@ export default function Onboarding() {
                 >
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{providerDisplayName(type)}</div>
-                    <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{providerDescription(type)}</div>
+                    <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>{providerDescription(type)}</div>
                   </div>
                   <ArrowRight size={18} color="var(--text-faint)" />
                 </button>
@@ -167,7 +181,7 @@ export default function Onboarding() {
               <div style={{ position: "relative" }}>
                 <input className="input" type={showKey ? "text" : "password"} placeholder="••••••••••••" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
                 <button onClick={() => setShowKey(!showKey)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
-                  {showKey ? "Hide" : "Show"}
+                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -191,8 +205,8 @@ export default function Onboarding() {
           <div className="fade-in" style={{ textAlign: "center", padding: "20px 0" }}>
             {testing && (
               <>
-                <div style={{ marginBottom: 16 }}>
-                  <div className="animate-spin" style={{ width: 40, height: 40, border: 3, borderColor: "var(--accent)", borderStyle: "solid", borderRadius: "50%", borderTopColor: "transparent", display: "inline-block" }} />
+                <div style={{ marginBottom: 16, display: "flex", justifyContent: "center" }}>
+                  <Loader2 size={40} className="animate-spin" style={{ color: "var(--accent)" }} />
                 </div>
                 <p style={{ fontSize: 15, color: "var(--text-muted)" }}>Testing connection...</p>
               </>

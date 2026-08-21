@@ -10,7 +10,7 @@ import {
   FileText, MessageSquare, Brain, ListChecks, BookOpen, Upload,
   Link2, Video, Sparkles, Loader2, Send, Square, FileDown, Trash2,
   ChevronLeft, ChevronRight, RotateCw, Check, X, Award,
-  FileText as DocIcon, AlertCircle,
+  AlertCircle, Clock,
 } from "lucide-react";
 import { marked } from "marked";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -18,7 +18,7 @@ import { LoadingState } from "../components/ui/LoadingState";
 import { StatCard } from "../components/ui/StatCard";
 import { ActionCard } from "../components/ui/ActionCard";
 
-type Tab = "overview" | "documents" | "chat" | "notes" | "flashcards" | "quizzes" | "studyplan";
+type Tab = "overview" | "documents" | "chat" | "notes" | "flashcards" | "quizzes";
 
 export default function ProjectView() {
   const { id } = useParams();
@@ -128,30 +128,45 @@ export default function ProjectView() {
 
   const tabs = [
     { key: "overview" as Tab, label: "Overview", icon: BookOpen },
-    { key: "documents" as Tab, label: "Documents", icon: FileText },
+    { key: "documents" as Tab, label: "Documents", icon: FileText, count: documents.length },
     { key: "chat" as Tab, label: "Chat", icon: MessageSquare },
-    { key: "notes" as Tab, label: "Notes", icon: FileDown },
-    { key: "flashcards" as Tab, label: "Flashcards", icon: Brain },
-    { key: "quizzes" as Tab, label: "Quizzes", icon: ListChecks },
+    { key: "notes" as Tab, label: "Notes", icon: FileDown, count: notes.length },
+    { key: "flashcards" as Tab, label: "Flashcards", icon: Brain, count: flashcards.length },
+    { key: "quizzes" as Tab, label: "Quizzes", icon: ListChecks, count: quizzes.length },
   ];
 
   return (
     <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      {/* Header */}
+      {/* Header with color accent */}
       <div style={{
         padding: "16px 28px", borderBottom: "1px solid var(--border)",
-        display: "flex", alignItems: "center", gap: 10, background: "var(--bg-elevated)",
+        display: "flex", alignItems: "center", gap: 12, background: "var(--bg-elevated)",
+        borderLeft: `3px solid ${project.color}`,
       }}>
-        <div style={{ width: 10, height: 10, borderRadius: "50%", background: project.color, flexShrink: 0 }} />
-        <h2 style={{ fontSize: 18, fontWeight: 700 }}>{project.name}</h2>
-        {project.description && <span style={{ fontSize: 13, color: "var(--text-muted)" }}>— {project.description}</span>}
+        <div style={{
+          width: 32, height: 32, borderRadius: "var(--radius-sm)",
+          background: `color-mix(in srgb, ${project.color} 15%, transparent)`,
+          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+        }}>
+          <div style={{ width: 10, height: 10, borderRadius: "50%", background: project.color }} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{project.name}</h2>
+          {project.description && <div style={{ fontSize: 13, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{project.description}</div>}
+        </div>
+        {!activeProvider && (
+          <span className="badge badge-warning">No AI Provider</span>
+        )}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs with counts */}
       <div className="tab-bar" style={{ padding: "0 28px" }}>
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)} className={`tab ${tab === t.key ? "tab-active" : ""}`}>
             <t.icon size={15} /> {t.label}
+            {t.count !== undefined && t.count > 0 && (
+              <span className="badge badge-neutral" style={{ marginLeft: 4, padding: "0 6px", fontSize: 10 }}>{t.count}</span>
+            )}
           </button>
         ))}
       </div>
@@ -201,22 +216,35 @@ function OverviewTab({ documents, notes, flashcards, quizzes, loading, loadingMs
   loading: boolean; loadingMsg: string; importing: string | null;
   onImport: () => void; onNotes: () => void; onFlashcards: () => void; onQuiz: () => void;
 }) {
+  const hasContent = documents.length > 0;
   return (
     <div className="fade-in">
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 24 }}>
-        <StatCard icon={DocIcon} label="Documents" value={documents.length} color="var(--accent)" />
+        <StatCard icon={FileText} label="Documents" value={documents.length} color="var(--accent)" />
         <StatCard icon={FileDown} label="Notes" value={notes.length} color="var(--accent-violet)" />
         <StatCard icon={Brain} label="Flashcards" value={flashcards.length} color="var(--success)" />
         <StatCard icon={ListChecks} label="Quiz Questions" value={quizzes.length} color="var(--warning)" />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Study Tools</h3>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
         <ActionCard icon={Upload} title="Import Document" description="PDF, DOCX, TXT, URL, YouTube" onClick={onImport} color="var(--accent)" />
         <ActionCard icon={Sparkles} title="Generate Notes" description="AI-powered study notes" onClick={onNotes} color="var(--accent-violet)" />
         <ActionCard icon={Brain} title="Generate Flashcards" description="Spaced repetition cards" onClick={onFlashcards} color="var(--success)" />
         <ActionCard icon={ListChecks} title="Generate Quiz" description="Test your knowledge" onClick={onQuiz} color="var(--warning)" />
       </div>
+
+      {!hasContent && (
+        <div className="card-inner" style={{ padding: 16, display: "flex", alignItems: "center", gap: 10 }}>
+          <Sparkles size={18} style={{ color: "var(--accent)", flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            Start by importing a document, then generate notes, flashcards, and quizzes from it.
+          </span>
+        </div>
+      )}
+
       {(loading || importing) && (
-        <div className="card-inner" style={{ padding: 16, marginTop: 20, display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="card-inner" style={{ padding: 16, marginTop: 16, display: "flex", alignItems: "center", gap: 10 }}>
           <Loader2 size={18} className="animate-spin" style={{ color: "var(--accent)" }} />
           <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>{importing || loadingMsg}</span>
         </div>
@@ -236,7 +264,7 @@ function DocumentsTab({ documents, projectId: _projectId, onImport, onReload }: 
     return (
       <div className="fade-in">
         <EmptyState
-          icon={DocIcon}
+          icon={FileText}
           title="No documents yet"
           description="Import your first learning material and let Edify turn it into notes, flashcards, quizzes, and more."
           action={
@@ -257,6 +285,7 @@ function DocumentsTab({ documents, projectId: _projectId, onImport, onReload }: 
   }
   return (
     <div className="fade-in">
+      {/* Import bar */}
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         <button className="btn btn-outline" onClick={() => document.getElementById("file-input")?.click()}>
           <Upload size={16} /> Import File
@@ -270,6 +299,7 @@ function DocumentsTab({ documents, projectId: _projectId, onImport, onReload }: 
           <Video size={16} /> YouTube
         </button>
       </div>
+      {/* Documents list */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {documents.map((doc) => (
           <div key={doc.id} className="card" style={{ padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -279,7 +309,10 @@ function DocumentsTab({ documents, projectId: _projectId, onImport, onReload }: 
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{doc.sourceKind} · {doc.chunks.length} chunks · {new Date(doc.createdAt).toLocaleDateString()}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
+                  <span className="badge badge-neutral" style={{ padding: "1px 6px", fontSize: 10 }}>{doc.sourceKind}</span>
+                  {doc.chunks.length} chunks · {new Date(doc.createdAt).toLocaleDateString()}
+                </div>
               </div>
             </div>
             <button className="btn btn-danger btn-icon btn-sm" onClick={async () => { await db.delete("documents", doc.id); onReload(); }}>
@@ -346,15 +379,15 @@ function NotesTab({ notes, loading, loadingMsg, onGenerate, hasProvider, hasDocu
           {/* Active note */}
           {selectedNote && (
             <div className="card" style={{ flex: 1, padding: 24, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <h3 style={{ fontSize: 17, fontWeight: 700 }}>{selectedNote.title}</h3>
                 <span className="badge badge-neutral">{selectedNote.type}</span>
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 16 }}>
-                {new Date(selectedNote.createdAt).toLocaleString()}
+              <div style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}>
+                <Clock size={12} /> {new Date(selectedNote.createdAt).toLocaleString()}
               </div>
+              <div className="divider" style={{ marginBottom: 16 }} />
               <div
-                className="notes-content"
                 style={{ fontSize: 14, lineHeight: 1.7 }}
                 dangerouslySetInnerHTML={{ __html: marked.parse(selectedNote.content) as string }}
               />
@@ -392,7 +425,7 @@ function FlashcardsTab({ flashcards, loading, loadingMsg, onGenerate, hasProvide
 
   if (loading) return <LoadingState text={loadingMsg} />;
 
-  // Review mode — interactive flashcard experience
+  // Review mode
   if (reviewing) {
     const card = flashcards[currentIndex];
     const progress = ((currentIndex + 1) / flashcards.length) * 100;
@@ -403,7 +436,6 @@ function FlashcardsTab({ flashcards, loading, loadingMsg, onGenerate, hasProvide
         setCurrentIndex(currentIndex + 1);
         setFlipped(false);
       } else {
-        // Finished all cards
         setReviewing(false);
         setCurrentIndex(0);
         setFlipped(false);
@@ -664,7 +696,7 @@ function QuizTab({ quizzes, loading, loadingMsg, onGenerate, hasProvider, hasDoc
             })}
           </div>
 
-          {/* Explanation after answering */}
+          {/* Explanation */}
           {showResult && (
             <div className="card-inner" style={{ padding: 12, marginTop: 16, background: selectedAnswer === question.correctIndex ? "var(--success-bg)" : "var(--error-bg)" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
@@ -760,15 +792,22 @@ function ChatTab({ projectId, documents }: { projectId: string; documents: Docum
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, streamText]);
 
-  async function send() {
-    if (!input.trim() || !activeProvider) return;
-    const userMsg: ChatMessage = { id: uuid(), projectId, role: "user", content: input, at: Date.now() };
+  const suggestions = [
+    "Summarize the key concepts",
+    "Explain the main ideas",
+    "What are the most important points?",
+    "Create a study guide",
+  ];
+
+  async function send(text: string) {
+    if (!text.trim() || !activeProvider) return;
+    const userMsg: ChatMessage = { id: uuid(), projectId, role: "user", content: text, at: Date.now() };
     setMessages((m) => [...m, userMsg]);
     setInput("");
     setStreaming(true);
     setStreamText("");
 
-    const { context, citations } = buildRAGContext(input, documents);
+    const { context, citations } = buildRAGContext(text, documents);
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -777,7 +816,7 @@ function ChatTab({ projectId, documents }: { projectId: string; documents: Docum
       await activeProvider.streamChat(
         {
           system: "You are Edify AI, a helpful study tutor. Answer questions using the provided context when available. Be clear and educational. Use markdown formatting.",
-          messages: [{ role: "user", content: input }],
+          messages: [{ role: "user", content: text }],
           context, signal: controller.signal,
         },
         (token) => { fullText += token; setStreamText(fullText); }
@@ -806,11 +845,28 @@ function ChatTab({ projectId, documents }: { projectId: string; documents: Docum
 
       <div ref={scrollRef} className="scroll-container" style={{ flex: 1, padding: "8px 0" }}>
         {messages.length === 0 && !streaming && (
-          <EmptyState
-            icon={MessageSquare}
-            title="Ask about your materials"
-            description="Chat with your study materials. Ask questions, get explanations, or request summaries."
-          />
+          <div style={{ paddingTop: 20 }}>
+            <EmptyState
+              icon={MessageSquare}
+              title="Ask about your materials"
+              description="Chat with your study materials. Ask questions, get explanations, or request summaries."
+            />
+            {/* Suggestion prompts */}
+            {documents.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 16 }}>
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    className="btn btn-outline btn-sm"
+                    onClick={() => send(s)}
+                    style={{ borderRadius: "var(--radius-full)" }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
         <div style={{ maxWidth: 680, display: "flex", flexDirection: "column", gap: 14 }}>
           {messages.map((msg) => (
@@ -848,7 +904,7 @@ function ChatTab({ projectId, documents }: { projectId: string; documents: Docum
           placeholder="Ask about your materials..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send(input)}
           disabled={streaming}
           style={{ flex: 1 }}
         />
@@ -857,7 +913,7 @@ function ChatTab({ projectId, documents }: { projectId: string; documents: Docum
             <Square size={16} />
           </button>
         ) : (
-          <button className="btn btn-primary btn-icon" onClick={send} disabled={!input.trim()} title="Send">
+          <button className="btn btn-primary btn-icon" onClick={() => send(input)} disabled={!input.trim()} title="Send">
             <Send size={16} />
           </button>
         )}
