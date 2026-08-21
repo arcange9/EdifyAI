@@ -5,12 +5,12 @@ import {
   Settings as SettingsIcon, KeyRound, Palette, Database, Eye, EyeOff,
   Check, X, Trash2, Info, Monitor, Moon, Sun, Keyboard, Shield,
   Zap, BookOpen, RefreshCw, Download, AlertCircle, Loader2,
+  Cpu, Layers, Globe,
 } from "lucide-react";
 import type { ProviderConfig, ProviderType } from "../lib/types";
 import { providerDisplayName, providerDescription, defaultBaseUrl } from "../ai/providers/manager";
 
-type Tab = "general" | "appearance" | "providers" | "storage" | "shortcuts" | "about";
-const PROVIDER_TYPES: ProviderType[] = ["openrouter", "google", "groq", "custom"];
+type Tab = "general" | "appearance" | "providers" | "models" | "storage" | "privacy" | "shortcuts" | "about";
 
 export default function Settings() {
   const { preferences, setPreferences, providers, saveProviderConfig, setActiveProvider } = useApp();
@@ -20,9 +20,11 @@ export default function Settings() {
 
   const tabs = [
     { key: "providers" as Tab, label: "AI Providers", icon: KeyRound },
+    { key: "models" as Tab, label: "Models", icon: Cpu },
     { key: "appearance" as Tab, label: "Appearance", icon: Palette },
     { key: "general" as Tab, label: "General", icon: SettingsIcon },
     { key: "storage" as Tab, label: "Storage", icon: Database },
+    { key: "privacy" as Tab, label: "Privacy", icon: Shield },
     { key: "shortcuts" as Tab, label: "Shortcuts", icon: Keyboard },
     { key: "about" as Tab, label: "About", icon: Info },
   ];
@@ -109,6 +111,10 @@ export default function Settings() {
               saveProviderConfig={saveProviderConfig}
               setActiveProvider={setActiveProvider}
             />
+          )}
+
+          {tab === "models" && (
+            <ModelsTab providers={providers} preferences={preferences} setActiveProvider={setActiveProvider} />
           )}
 
           {tab === "appearance" && (
@@ -211,6 +217,46 @@ export default function Settings() {
             </div>
           )}
 
+          {tab === "privacy" && (
+            <div className="fade-in">
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Privacy</h3>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
+                Your data privacy and security settings.
+              </p>
+              <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <Shield size={18} style={{ color: "var(--accent)" }} />
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>API Key Storage</span>
+                </div>
+                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.6 }}>
+                  Your API keys are stored using your operating system's secure credential storage (Electron safeStorage). They never leave your device and are never sent to any server except the AI provider you've configured.
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <span className="status-dot success" />
+                  <span style={{ fontSize: 13, color: "var(--success)", fontWeight: 600 }}>Secure storage active</span>
+                </div>
+              </div>
+              <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <Database size={18} style={{ color: "var(--accent)" }} />
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>Data Storage</span>
+                </div>
+                <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                  All your study data (documents, notes, flashcards, quizzes, chat history) is stored locally in your browser's IndexedDB. No data is uploaded to any cloud service.
+                </p>
+              </div>
+              <div className="card" style={{ padding: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                  <Globe size={18} style={{ color: "var(--accent)" }} />
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>AI Provider Communication</span>
+                </div>
+                <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                  When you use AI features, your study materials are sent directly to your configured AI provider (OpenRouter, Google AI, Groq, or your custom endpoint) for processing. Edify AI does not intercept, log, or store this communication.
+                </p>
+              </div>
+            </div>
+          )}
+
           {tab === "shortcuts" && (
             <div className="fade-in">
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Keyboard Shortcuts</h3>
@@ -258,12 +304,12 @@ export default function Settings() {
               </div>
 
               <div className="card" style={{ padding: 20, marginBottom: 16 }}>
-                <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>Version 1.1.0</div>
+                <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>Version 1.1.1</div>
                 <div style={{ fontSize: 14, color: "var(--text-muted)" }}>Built for students, learners, and educators.</div>
               </div>
 
               {/* Update section */}
-              <div className="card" style={{ padding: 20, marginBottom: 16, border: "1px solid var(--border)" }}>
+              <div className="card" style={{ padding: 20, marginBottom: 16 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
                   <RefreshCw size={16} style={{ color: "var(--accent)" }} /> Updates
                 </h3>
@@ -369,6 +415,103 @@ export default function Settings() {
   );
 }
 
+/* ── MODELS TAB ───────────────────────────────────────────────────── */
+
+function ModelsTab({ providers, preferences, setActiveProvider }: {
+  providers: ProviderConfig[];
+  preferences: { defaultProviderId?: string };
+  setActiveProvider: (id: string) => Promise<void>;
+}) {
+  const configuredProviders = providers.filter((p) => p.apiKey);
+  const [search, setSearch] = useState("");
+
+  if (configuredProviders.length === 0) {
+    return (
+      <div className="fade-in">
+        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Models</h3>
+        <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
+          Select and manage AI models for your configured providers.
+        </p>
+        <div className="empty-state">
+          <div className="empty-state-icon"><Cpu size={28} strokeWidth={1.8} /></div>
+          <div className="empty-state-title">No providers configured</div>
+          <div className="empty-state-desc">Configure an AI provider first to see and select available models.</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fade-in">
+      <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Models</h3>
+      <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20 }}>
+        Select which AI model each provider uses.
+      </p>
+
+      {/* Search */}
+      <div style={{ position: "relative", marginBottom: 20, maxWidth: 400 }}>
+        <input className="input" style={{ paddingLeft: 36 }} placeholder="Search models..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-faint)" }}>
+          <Cpu size={16} />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {configuredProviders.map((provider) => {
+          const isActive = provider.id === preferences.defaultProviderId;
+          const modelMatches = !search || (provider.model || "").toLowerCase().includes(search.toLowerCase());
+          return (
+            <div key={provider.id} style={{ display: modelMatches ? "block" : "none" }}>
+              {/* Provider header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: "var(--radius)",
+                  background: "var(--accent-light)", display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <KeyRound size={18} style={{ color: "var(--accent)" }} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{provider.name}</div>
+                  {isActive && <span className="badge badge-success" style={{ marginTop: 2 }}><Check size={10} /> Active</span>}
+                </div>
+              </div>
+
+              {/* Model card */}
+              <div className="card" style={{ padding: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <Cpu size={18} style={{ color: "var(--text-muted)" }} />
+                    <div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600 }}>
+                        {provider.model || "Auto-select"}
+                      </div>
+                      <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+                        <span className="badge badge-neutral"><Layers size={9} /> Text</span>
+                        <span className="badge badge-neutral"><Globe size={9} /> Streaming</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-outline btn-sm"
+                    onClick={() => setActiveProvider(provider.id)}
+                    disabled={isActive}
+                  >
+                    {isActive ? "Active" : "Set Active"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── PROVIDERS TAB ──────────────────────────────────────────────── */
+
+const PROVIDER_TYPES: ProviderType[] = ["openrouter", "google", "groq", "custom"];
+
 function ProvidersTab({ providers, preferences, saveProviderConfig, setActiveProvider }: {
   providers: ProviderConfig[];
   preferences: { defaultProviderId?: string; fallbackProviderId?: string; fallbackEnabled: boolean };
@@ -452,7 +595,7 @@ function ProvidersTab({ providers, preferences, saveProviderConfig, setActivePro
                   </div>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{providerDisplayName(type)}</div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{providerDescription(type)}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{providerDescription(type)}</div>
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -480,7 +623,7 @@ function ProvidersTab({ providers, preferences, saveProviderConfig, setActivePro
         <div className="modal-overlay" onClick={() => setEditing(null)}>
           <div className="modal" style={{ width: 480 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ fontSize: 17, fontWeight: 700 }}>Configure {providerDisplayName(editing.type)}</h3>
+              <h3>Configure {providerDisplayName(editing.type)}</h3>
               <button className="btn btn-ghost btn-icon" onClick={() => setEditing(null)}>✕</button>
             </div>
             <div className="modal-body">

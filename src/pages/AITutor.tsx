@@ -3,8 +3,8 @@ import { useApp } from "../lib/app-context";
 import { v4 as uuid } from "uuid";
 import type { ChatMessage } from "../lib/types";
 import {
-  GraduationCap, Send, Sparkles, Lightbulb, BookOpen,
-  ListChecks,
+  GraduationCap, Send, Lightbulb, BookOpen,
+  ListChecks, Square, PenLine, HelpCircle,
 } from "lucide-react";
 import { EmptyState } from "../components/ui/EmptyState";
 import { marked } from "marked";
@@ -21,10 +21,12 @@ export default function AITutor() {
   const abortRef = useRef<AbortController | null>(null);
 
   const quickActions = [
-    { label: "Explain simply", icon: Lightbulb, prompt: "Explain this concept simply: " },
-    { label: "Give an example", icon: BookOpen, prompt: "Give me a practical example of: " },
-    { label: "Teach me step-by-step", icon: GraduationCap, prompt: "Teach me step by step: " },
-    { label: "Test me", icon: ListChecks, prompt: "Test my knowledge on: " },
+    { label: "Explain simply", icon: Lightbulb, prompt: "Explain this concept simply: ", desc: "Get a clear, simple explanation" },
+    { label: "Give an example", icon: BookOpen, prompt: "Give me a practical example of: ", desc: "See it in action" },
+    { label: "Teach me step-by-step", icon: GraduationCap, prompt: "Teach me step by step: ", desc: "Learn at your own pace" },
+    { label: "Test me", icon: ListChecks, prompt: "Test my knowledge on: ", desc: "Check your understanding" },
+    { label: "Practice questions", icon: PenLine, prompt: "Give me practice questions about: ", desc: "Sharpen your skills" },
+    { label: "Ask a question", icon: HelpCircle, prompt: "", desc: "Ask anything you want to learn" },
   ];
 
   async function send(text: string) {
@@ -42,7 +44,7 @@ export default function AITutor() {
     try {
       await activeProvider.streamChat(
         {
-          system: "You are Edify AI Tutor, a patient and encouraging teacher. Break down complex concepts into simple, understandable parts. Use examples, analogies, and step-by-step explanations. Ask questions to check understanding. Be warm and supportive.",
+          system: "You are Edify AI Tutor, a patient and encouraging teacher. Break down complex concepts into simple, understandable parts. Use examples, analogies, and step-by-step explanations. Ask questions to check understanding. Be warm and supportive. Use markdown formatting for clarity.",
           messages: [{ role: "user", content: text }],
           signal: controller.signal,
         },
@@ -65,9 +67,12 @@ export default function AITutor() {
         padding: "16px 24px", borderBottom: "1px solid var(--border)",
         background: "var(--bg-elevated)", flexShrink: 0,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: "var(--radius)", background: "var(--brand-gradient)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <GraduationCap size={18} color="white" />
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: "var(--radius-md)", background: "var(--brand-gradient)",
+            display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-brand)",
+          }}>
+            <GraduationCap size={20} color="white" />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 17 }}>Edify Tutor</div>
@@ -79,22 +84,31 @@ export default function AITutor() {
       {/* Messages */}
       <div ref={scrollRef} className="scroll-container" style={{ flex: 1, padding: "24px" }}>
         {messages.length === 0 && !streaming ? (
-          <div style={{ maxWidth: 640, margin: "0 auto", paddingTop: 40 }}>
+          <div style={{ maxWidth: 640, margin: "0 auto", paddingTop: 24 }}>
             <EmptyState
               icon={GraduationCap}
               title="Your personal AI Tutor"
               description="Ask me to explain any concept, break down complex topics, give you examples, or test your knowledge."
             />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginTop: 24 }}>
+            {/* Quick action grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 28 }}>
               {quickActions.map((qa) => (
                 <button
                   key={qa.label}
                   className="card card-hover"
                   onClick={() => send(qa.prompt + (input || "a topic of your choice"))}
-                  style={{ padding: 14, display: "flex", alignItems: "center", gap: 10, textAlign: "left" }}
+                  style={{ padding: 16, display: "flex", flexDirection: "column", gap: 6, textAlign: "left" }}
                 >
-                  <qa.icon size={18} style={{ color: "var(--accent)" }} />
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{qa.label}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: "var(--radius-sm)",
+                      background: "var(--accent-light)", display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <qa.icon size={16} style={{ color: "var(--accent)" }} />
+                    </div>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>{qa.label}</span>
+                  </div>
+                  <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{qa.desc}</span>
                 </button>
               ))}
             </div>
@@ -140,7 +154,7 @@ export default function AITutor() {
           />
           {streaming ? (
             <button className="btn btn-ghost btn-icon" onClick={() => abortRef.current?.abort()} title="Stop">
-              <Sparkles size={16} className="animate-spin" />
+              <Square size={16} />
             </button>
           ) : (
             <button className="btn btn-primary btn-icon" onClick={() => send(input)} disabled={!input.trim()} title="Send">

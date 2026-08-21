@@ -1,9 +1,10 @@
 import { useApp } from "../lib/app-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FileText, Sparkles, BookOpen, Zap, Clock,
   Award, Flame, ChevronRight, Plus, Brain, ListChecks,
+  GraduationCap, Upload, Calendar,
 } from "lucide-react";
 import { db } from "../lib/db";
 import { v4 as uuid } from "uuid";
@@ -17,6 +18,26 @@ export default function Dashboard() {
   const [showCreate, setShowCreate] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [projectDesc, setProjectDesc] = useState("");
+  const [recentItems, setRecentItems] = useState<{ type: string; title: string; projectId: string; date: number; icon: typeof FileText; color: string }[]>([]);
+
+  // Gather recent activity across all projects
+  useEffect(() => {
+    (async () => {
+      const items: { type: string; title: string; projectId: string; date: number; icon: typeof FileText; color: string }[] = [];
+      for (const p of projects.slice(0, 5)) {
+        const docs = await db.getDocuments(p.id);
+        const notes = await db.getNotes(p.id);
+        const cards = await db.getFlashcards(p.id);
+        const quizzes = await db.getQuizQuestions(p.id);
+        docs.slice(-3).forEach((d) => items.push({ type: "Document", title: d.title, projectId: p.id, date: d.createdAt, icon: FileText, color: "var(--accent)" }));
+        notes.slice(-2).forEach((n) => items.push({ type: "Note", title: n.title, projectId: p.id, date: n.createdAt, icon: FileText, color: "var(--accent-violet)" }));
+        if (cards.length) items.push({ type: "Flashcards", title: `${cards.length} cards`, projectId: p.id, date: cards[0].createdAt, icon: Brain, color: "var(--success)" });
+        if (quizzes.length) items.push({ type: "Quiz", title: `${quizzes.length} questions`, projectId: p.id, date: quizzes[0].createdAt, icon: ListChecks, color: "var(--warning)" });
+      }
+      items.sort((a, b) => b.date - a.date);
+      setRecentItems(items.slice(0, 6));
+    })();
+  }, [projects]);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -44,26 +65,17 @@ export default function Dashboard() {
     <div className="scroll-container" style={{ padding: "32px 40px" }}>
       <div className="fade-in" style={{ maxWidth: "var(--max-content)", margin: "0 auto" }}>
         {/* Hero greeting */}
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>
-            {greeting} <span style={{ fontSize: 24 }}>👋</span>
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4, letterSpacing: -0.03 }}>
+            {greeting}.
           </h1>
           <p style={{ fontSize: 16, color: "var(--text-muted)" }}>
-            What do you want to learn today?
+            What would you like to learn today?
           </p>
         </div>
 
-        {/* Stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 28 }}>
-          <StatCard icon={BookOpen} label="Projects" value={projects.length} color="var(--accent)" />
-          <StatCard icon={Clock} label="Study Sessions" value={0} color="var(--accent-violet)" />
-          <StatCard icon={Award} label="Quiz Score" value="—" color="var(--success)" />
-          <StatCard icon={Flame} label="Study Streak" value={0} color="var(--warning)" />
-        </div>
-
         {/* Primary actions */}
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Quick Start</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 32 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 28 }}>
           <ActionCard
             icon={Plus}
             title="New Study"
@@ -72,7 +84,7 @@ export default function Dashboard() {
             color="var(--accent)"
           />
           <ActionCard
-            icon={FileText}
+            icon={Upload}
             title="Import Document"
             description="PDF, DOCX, TXT, Markdown"
             onClick={() => {
@@ -93,51 +105,103 @@ export default function Dashboard() {
           />
         </div>
 
+        {/* Stats row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 28 }}>
+          <StatCard icon={BookOpen} label="Projects" value={projects.length} color="var(--accent)" />
+          <StatCard icon={Clock} label="Study Sessions" value={0} color="var(--accent-violet)" />
+          <StatCard icon={Award} label="Quiz Score" value="—" color="var(--success)" />
+          <StatCard icon={Flame} label="Study Streak" value={0} color="var(--warning)" />
+        </div>
+
         {/* Quick Actions */}
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Quick Actions</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 32 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+          <Zap size={16} style={{ color: "var(--accent)" }} /> Quick Actions
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 32 }}>
           <QuickAction icon={FileText} label="Summarize" onClick={() => navigate("/library")} />
           <QuickAction icon={Brain} label="Create Flashcards" onClick={() => navigate("/library")} />
           <QuickAction icon={ListChecks} label="Generate Quiz" onClick={() => navigate("/library")} />
-          <QuickAction icon={Sparkles} label="Explain a Concept" onClick={() => navigate("/tutor")} />
-          <QuickAction icon={Zap} label="Create Study Plan" onClick={() => navigate("/study-plans")} />
+          <QuickAction icon={GraduationCap} label="Explain a Concept" onClick={() => navigate("/tutor")} />
+          <QuickAction icon={Calendar} label="Create Study Plan" onClick={() => navigate("/study-plans")} />
         </div>
 
-        {/* Recent Projects */}
+        {/* Continue Learning + Recent Activity */}
         {projects.length > 0 ? (
-          <>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              Continue Learning
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate("/library")}>
-                View all <ChevronRight size={14} />
-              </button>
-            </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-              {projects.slice(0, 6).map((project) => (
-                <div
-                  key={project.id}
-                  className="card card-hover"
-                  onClick={() => navigate(`/project/${project.id}`)}
-                  style={{ padding: 20, cursor: "pointer" }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: project.color, flexShrink: 0 }} />
-                    <div style={{ fontWeight: 700, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {project.name}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 32 }}>
+            {/* Continue Learning */}
+            <div>
+              <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                Continue Learning
+                <button className="btn btn-ghost btn-sm" onClick={() => navigate("/library")}>
+                  View all <ChevronRight size={14} />
+                </button>
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {projects.slice(0, 4).map((project) => (
+                  <div
+                    key={project.id}
+                    className="card card-hover"
+                    onClick={() => navigate(`/project/${project.id}`)}
+                    style={{ padding: 14, cursor: "pointer" }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "var(--radius-sm)", background: `color-mix(in srgb, ${project.color} 15%, transparent)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: project.color }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {project.name}
+                        </div>
+                        {project.description && (
+                          <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {project.description}
+                          </div>
+                        )}
+                      </div>
+                      <ChevronRight size={14} style={{ color: "var(--text-faint)", flexShrink: 0 }} />
                     </div>
                   </div>
-                  {project.description && (
-                    <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {project.description}
-                    </div>
-                  )}
-                  <div style={{ fontSize: 11, color: "var(--text-faint)" }}>
-                    Updated {timeAgo(project.updatedAt)}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </>
+
+            {/* Recent Activity */}
+            <div>
+              <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Recent Activity</h2>
+              {recentItems.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {recentItems.map((item, i) => (
+                    <div
+                      key={i}
+                      className="card card-hover"
+                      onClick={() => navigate(`/project/${item.projectId}`)}
+                      style={{ padding: 14, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
+                    >
+                      <div style={{
+                        width: 32, height: 32, borderRadius: "var(--radius-sm)",
+                        background: `color-mix(in srgb, ${item.color} 12%, transparent)`,
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                      }}>
+                        <item.icon size={16} style={{ color: item.color }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {item.title}
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                          {item.type} · {timeAgo(item.date)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="card-inner" style={{ padding: 20, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+                  No recent activity yet. Start studying to see your progress here.
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
           <EmptyState
             icon={BookOpen}
@@ -153,7 +217,7 @@ export default function Dashboard() {
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="modal" style={{ width: 460 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ fontSize: 17, fontWeight: 700 }}>New Study Project</h3>
+              <h3>New Study Project</h3>
               <button className="btn btn-ghost btn-icon" onClick={() => setShowCreate(false)}>✕</button>
             </div>
             <div className="modal-body">

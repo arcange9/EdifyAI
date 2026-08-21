@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useApp } from "../lib/app-context";
 import {
   BookOpen, LayoutDashboard, Library, Settings, Plus, HelpCircle,
   ChevronLeft, ChevronRight, GraduationCap, Brain, ListChecks,
-  StickyNote, Calendar,
+  StickyNote, Calendar, FileText,
 } from "lucide-react";
 
 const navItems = [
@@ -15,15 +15,28 @@ const navItems = [
 ];
 
 const toolItems = [
-  { path: "/notes", label: "Notes", icon: StickyNote },
-  { path: "/flashcards", label: "Flashcards", icon: Brain },
-  { path: "/quizzes", label: "Quizzes", icon: ListChecks },
+  { path: "/library?tab=notes", label: "Notes", icon: StickyNote },
+  { path: "/library?tab=flashcards", label: "Flashcards", icon: Brain },
+  { path: "/library?tab=quizzes", label: "Quizzes", icon: ListChecks },
+  { path: "/library?tab=documents", label: "Documents", icon: FileText },
 ];
 
 export default function AppShell() {
-  const { projects } = useApp();
+  const { projects, activeProvider } = useApp();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+
+  // Keyboard shortcut: Ctrl+B to toggle sidebar
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "b") {
+        e.preventDefault();
+        setCollapsed((c) => !c);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const sidebarWidth = collapsed ? "var(--sidebar-collapsed)" : "var(--sidebar-width)";
 
@@ -39,6 +52,8 @@ export default function AppShell() {
         flexDirection: "column",
         overflow: "hidden",
         transition: "width var(--transition), min-width var(--transition)",
+        position: "relative",
+        zIndex: 10,
       }}>
         {/* Logo + Collapse */}
         <div style={{
@@ -116,7 +131,7 @@ export default function AppShell() {
           {/* Projects */}
           {projects.length > 0 && (
             <>
-              {!collapsed && <div className="nav-section-label">Recent Projects</div>}
+              {!collapsed && <div className="nav-section-label" style={{ marginTop: 8 }}>Recent Projects</div>}
               {projects.slice(0, 8).map((project) => (
                 <NavLink
                   key={project.id}
@@ -166,6 +181,22 @@ export default function AppShell() {
           </button>
         </div>
 
+        {/* Provider status indicator */}
+        {!collapsed && (
+          <div style={{ padding: "0 16px 8px" }}>
+            <div style={{
+              padding: "8px 12px", borderRadius: "var(--radius-sm)",
+              background: activeProvider ? "var(--success-bg)" : "var(--surface-3)",
+              display: "flex", alignItems: "center", gap: 8, fontSize: 11,
+            }}>
+              <span className={`status-dot ${activeProvider ? "success" : "neutral"}`} />
+              <span style={{ color: activeProvider ? "var(--success)" : "var(--text-muted)", fontWeight: 600 }}>
+                {activeProvider ? "AI Connected" : "No Provider"}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
@@ -174,10 +205,11 @@ export default function AppShell() {
             padding: "8px", background: "transparent", border: "none",
             cursor: "pointer", color: "var(--text-faint)",
             transition: "color var(--transition)",
+            borderTop: "1px solid var(--border)",
           }}
           onMouseEnter={(e) => e.currentTarget.style.color = "var(--text)"}
           onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-faint)"}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
