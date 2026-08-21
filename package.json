@@ -1,7 +1,7 @@
 {
   "name": "edifyai",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "description": "Edify AI \u2014 Turn Knowledge Into Understanding. AI-powered study workspace for Windows.",
   "author": "Edify AI contributors",
