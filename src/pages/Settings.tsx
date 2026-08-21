@@ -304,7 +304,7 @@ export default function Settings() {
               </div>
 
               <div className="card" style={{ padding: 20, marginBottom: 16 }}>
-                <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>Version 1.1.1</div>
+                <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 4 }}>Version 1.2.0</div>
                 <div style={{ fontSize: 14, color: "var(--text-muted)" }}>Built for students, learners, and educators.</div>
               </div>
 
