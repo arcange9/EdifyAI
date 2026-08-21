@@ -8,6 +8,11 @@
  *   - File system operations (open/save dialogs, file reading)
  *   - YouTube transcript extraction (via local server endpoint)
  *   - Auto-update via GitHub releases (electron-updater)
+ *
+ * NOTE: This file is loaded directly by Node/Electron's ESM loader in the
+ * packaged app — it is NOT compiled by tsc. It must be plain JavaScript
+ * (no TypeScript type annotations), or Node will throw
+ * "SyntaxError: Unexpected token ':'" at startup.
  */
 
 import { app, BrowserWindow, ipcMain, shell, dialog, safeStorage } from "electron";
@@ -19,7 +24,7 @@ import http from "node:http";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = !app.isPackaged;
 
-let mainWindow: BrowserWindow | null = null;
+let mainWindow = null;
 let serverPort = 0;
 
 /* ------------------------------------------------------------------ */
@@ -82,7 +87,7 @@ if (!isDev) {
 /* Local static server — serves the built SPA to the webview           */
 /* ------------------------------------------------------------------ */
 
-const MIME: Record<string, string> = {
+const MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".mjs": "text/javascript; charset=utf-8",
@@ -98,7 +103,7 @@ const MIME: Record<string, string> = {
   ".wasm": "application/wasm",
 };
 
-function startStaticServer(distDir: string): Promise<number> {
+function startStaticServer(distDir) {
   const server = http.createServer((req, res) => {
     const urlPath = (req.url ?? "/").split("?")[0];
     let filePath = path.join(distDir, decodeURIComponent(urlPath));
@@ -134,7 +139,7 @@ function startStaticServer(distDir: string): Promise<number> {
 async function createWindow() {
   const distDir = path.join(__dirname, "..", "dist");
 
-  let url: string;
+  let url;
   if (isDev) {
     url = "http://localhost:5173";
   } else {
@@ -182,7 +187,7 @@ async function createWindow() {
 /* ------------------------------------------------------------------ */
 
 // --- Credential storage via safeStorage ---
-ipcMain.handle("credentials:set", (_event, key: string, value: string) => {
+ipcMain.handle("credentials:set", (_event, key, value) => {
   if (!safeStorage.isEncryptionAvailable()) {
     return false;
   }
@@ -193,7 +198,7 @@ ipcMain.handle("credentials:set", (_event, key: string, value: string) => {
   return true;
 });
 
-ipcMain.handle("credentials:get", (_event, key: string): string | null => {
+ipcMain.handle("credentials:get", (_event, key) => {
   if (!safeStorage.isEncryptionAvailable()) {
     return null;
   }
@@ -207,7 +212,7 @@ ipcMain.handle("credentials:get", (_event, key: string): string | null => {
   }
 });
 
-ipcMain.handle("credentials:delete", (_event, key: string): boolean => {
+ipcMain.handle("credentials:delete", (_event, key) => {
   const credFile = path.join(app.getPath("userData"), "credentials", `${key}.cred`);
   if (fs.existsSync(credFile)) {
     fs.unlinkSync(credFile);
@@ -218,7 +223,7 @@ ipcMain.handle("credentials:delete", (_event, key: string): boolean => {
 
 // --- File dialogs ---
 ipcMain.handle("dialog:openFile", async () => {
-  const result = await dialog.showOpenDialog(mainWindow!, {
+  const result = await dialog.showOpenDialog(mainWindow, {
     properties: ["openFile"],
     filters: [
       { name: "Documents", extensions: ["pdf", "docx", "doc", "txt", "md", "markdown"] },
@@ -235,8 +240,8 @@ ipcMain.handle("dialog:openFile", async () => {
   };
 });
 
-ipcMain.handle("dialog:saveFile", async (_event, defaultName: string) => {
-  const result = await dialog.showSaveDialog(mainWindow!, {
+ipcMain.handle("dialog:saveFile", async (_event, defaultName) => {
+  const result = await dialog.showSaveDialog(mainWindow, {
     defaultPath: defaultName,
     filters: [{ name: "All Files", extensions: ["*"] }],
   });
@@ -244,19 +249,19 @@ ipcMain.handle("dialog:saveFile", async (_event, defaultName: string) => {
 });
 
 // --- File system ---
-ipcMain.handle("fs:readFile", (_event, filePath: string) => {
+ipcMain.handle("fs:readFile", (_event, filePath) => {
   const buffer = fs.readFileSync(filePath);
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 });
 
-ipcMain.handle("fs:writeFile", (_event, filePath: string, data: Uint8Array) => {
+ipcMain.handle("fs:writeFile", (_event, filePath, data) => {
   fs.writeFileSync(filePath, data);
   return true;
 });
 
 ipcMain.handle("app:getVersion", () => app.getVersion());
 
-ipcMain.handle("app:openExternal", (_event, url: string) => {
+ipcMain.handle("app:openExternal", (_event, url) => {
   shell.openExternal(url);
 });
 
