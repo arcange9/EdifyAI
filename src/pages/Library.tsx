@@ -48,7 +48,10 @@ export default function Library() {
       <div style={{ maxWidth: "var(--max-content)", margin: "0 auto" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800 }}>Library</h1>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 800 }}>Library</h1>
+            <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 2 }}>All your study materials in one place.</p>
+          </div>
           <div style={{ display: "flex", gap: 4 }} className="card-inner">
             <button className={`btn btn-icon ${viewMode === "list" ? "btn-secondary" : "btn-ghost"}`} onClick={() => setViewMode("list")} title="List view">
               <List size={16} />
@@ -84,11 +87,11 @@ export default function Library() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             {filteredDocs.length > 0 && (
-              <LibrarySection title="Documents" count={filteredDocs.length}>
+              <LibrarySection title="Documents" icon={FileText} count={filteredDocs.length}>
                 {viewMode === "list" ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {filteredDocs.map((doc) => (
-                      <div key={doc.id} className="card card-hover" style={{ padding: 14, display: "flex", alignItems: "center", gap: 12 }} onClick={() => navigate(`/project/${doc.projectId}`)}>
+                      <div key={doc.id} className="card card-hover" style={{ padding: 14, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => navigate(`/project/${doc.projectId}`)}>
                         <div style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", background: "var(--accent-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <FileText size={18} style={{ color: "var(--accent)" }} />
                         </div>
@@ -96,6 +99,7 @@ export default function Library() {
                           <div style={{ fontWeight: 600, fontSize: 14 }}>{doc.title}</div>
                           <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{doc.sourceKind} · {doc.chunks.length} chunks · {new Date(doc.createdAt).toLocaleDateString()}</div>
                         </div>
+                        <ChevronRight size={14} style={{ color: "var(--text-faint)" }} />
                       </div>
                     ))}
                   </div>
@@ -116,10 +120,10 @@ export default function Library() {
             )}
 
             {filteredNotes.length > 0 && (
-              <LibrarySection title="Notes" count={filteredNotes.length}>
+              <LibrarySection title="Notes" icon={FileDown} count={filteredNotes.length}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {filteredNotes.map((note) => (
-                    <div key={note.id} className="card card-hover" style={{ padding: 14, display: "flex", alignItems: "center", gap: 12 }} onClick={() => navigate(`/project/${note.projectId}`)}>
+                    <div key={note.id} className="card card-hover" style={{ padding: 14, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => navigate(`/project/${note.projectId}`)}>
                       <div style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", background: "var(--accent-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <FileDown size={18} style={{ color: "var(--accent-violet)" }} />
                       </div>
@@ -127,6 +131,7 @@ export default function Library() {
                         <div style={{ fontWeight: 600, fontSize: 14 }}>{note.title}</div>
                         <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{note.type} · {new Date(note.createdAt).toLocaleDateString()}</div>
                       </div>
+                      <ChevronRight size={14} style={{ color: "var(--text-faint)" }} />
                     </div>
                   ))}
                 </div>
@@ -134,7 +139,7 @@ export default function Library() {
             )}
 
             {filteredCards.length > 0 && (
-              <LibrarySection title="Flashcards" count={filteredCards.length}>
+              <LibrarySection title="Flashcards" icon={Brain} count={filteredCards.length}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
                   {filteredCards.slice(0, 12).map((card) => (
                     <div key={card.id} className="card" style={{ padding: 14 }}>
@@ -148,7 +153,7 @@ export default function Library() {
             )}
 
             {filteredQuizzes.length > 0 && (
-              <LibrarySection title="Quiz Questions" count={filteredQuizzes.length}>
+              <LibrarySection title="Quiz Questions" icon={ListChecks} count={filteredQuizzes.length}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {filteredQuizzes.slice(0, 10).map((q) => (
                     <div key={q.id} className="card" style={{ padding: 14 }}>
@@ -166,10 +171,11 @@ export default function Library() {
   );
 }
 
-function LibrarySection({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
+function LibrarySection({ title, icon: Icon, count, children }: { title: string; icon: typeof FileText; count: number; children: React.ReactNode }) {
   return (
     <div>
       <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+        <Icon size={18} style={{ color: "var(--accent)" }} />
         {title}
         <span className="badge badge-neutral">{count}</span>
       </h2>
@@ -177,3 +183,5 @@ function LibrarySection({ title, count, children }: { title: string; count: numb
     </div>
   );
 }
+
+import { ChevronRight } from "lucide-react";
